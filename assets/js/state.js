@@ -15,9 +15,13 @@ export function existingNumbers() { return state.quotes.map((q) => q.number); }
 export function startNewDraft() {
   state.editingNumber = null;
   state.draft = createQuote({
-    items: [{ description: '', quantity: 1, price: 0 }],
+    items: [emptyItem()],
     existingNumbers: existingNumbers()
   });
+}
+
+function emptyItem() {
+  return { description: '', quantity: '', price: '' };
 }
 
 export function loadDraft(quote) {

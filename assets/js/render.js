@@ -36,6 +36,7 @@ export function init() {
   document.addEventListener('click', onClick);
   document.addEventListener('change', onChange);
   document.addEventListener('input', onInput);
+  document.addEventListener('keydown', onKeydown);
   document.addEventListener('submit', onFormSubmit);
   render();
 }
@@ -110,19 +111,40 @@ function validateFieldVisual(el) {
     const v = Number(el.value);
     setInvalid(el, !(Number.isFinite(v) && v >= 0 && v <= 100));
   } else if (el.dataset.item === 'description') setInvalid(el, !String(el.value).trim());
-  else if (el.dataset.item === 'quantity') setInvalid(el, !(Number(el.value) > 0));
-  else if (el.dataset.item === 'price') setInvalid(el, !(Number(el.value) >= 0));
+  else if (el.dataset.item === 'quantity') {
+    const v = el.value;
+    setInvalid(el, v === '' || !(Number(v) > 0));
+  } else if (el.dataset.item === 'price') {
+    const v = el.value;
+    setInvalid(el, v === '' || !(Number(v) >= 0));
+  }
+}
+
+function fieldForError(key) {
+  if (key === 'client' || key === 'discount') return document.getElementById(key);
+  if (key.startsWith('item-')) {
+    const [, index, field] = key.split('-');
+    return document.querySelector(`#items-area tr[data-index="${index}"] [data-item="${field}"]`);
+  }
+  return null;
+}
+
+function setFieldError(el, message) {
+  if (!el) return;
+  el.setAttribute('aria-invalid', 'true');
+  el.parentElement?.querySelector('.field-error')?.remove();
+  const err = document.createElement('p');
+  err.className = 'field-error';
+  err.textContent = message;
+  el.insertAdjacentElement('afterend', err);
 }
 
 function highlightErrors(errors) {
-  Object.entries(errors).forEach(([key]) => {
+  Object.entries(errors).forEach(([key, message]) => {
     if (key === 'items') {
-      document.querySelectorAll('#items-area [data-item="description"]').forEach((el) => setInvalid(el, true));
-    } else if (key.startsWith('item-')) {
-      const [, index, field] = key.split('-');
-      setInvalid(document.querySelector(`#items-area tr[data-index="${index}"] [data-item="${field}"]`), true);
+      document.querySelectorAll('#items-area [data-item="description"]').forEach((el) => setFieldError(el, message));
     } else {
-      setInvalid(document.getElementById(key), true);
+      setFieldError(fieldForError(key), message);
     }
   });
   focusFirstInvalid();
@@ -228,7 +250,7 @@ function handleClearForm() {
   const { draft } = getState();
   const hasContent = Boolean(draft.client)
     || Boolean(draft.notes)
-    || draft.items.some((i) => i.description || Number(i.quantity) !== 1 || Number(i.price) !== 0);
+    || draft.items.some((i) => i.description || i.quantity !== '' || i.price !== '');
   if (hasContent && !window.confirm('¿Limpiar el formulario y empezar de nuevo?')) return;
   startNewDraft();
   render();
@@ -267,7 +289,7 @@ function deleteQuote(number) {
 
 function addItem() {
   const { draft } = getState();
-  draft.items.push({ description: '', quantity: 1, price: 0 });
+  draft.items.push({ description: '', quantity: '', price: '' });
   renderItems();
   renderTotals();
   const last = document.querySelector('tr:last-child [data-item="description"]');
@@ -278,7 +300,7 @@ function removeItem(index) {
   const { draft } = getState();
   if (index < 0 || index >= draft.items.length) return;
   draft.items.splice(index, 1);
-  if (!draft.items.length) draft.items.push({ description: '', quantity: 1, price: 0 });
+  if (!draft.items.length) draft.items.push({ description: '', quantity: '', price: '' });
   renderItems();
   renderTotals();
 }
@@ -287,7 +309,8 @@ function updateRowSubtotal(row, index) {
   const { draft } = getState();
   const el = row && row.querySelector('[data-item-subtotal]');
   if (el && draft.items[index]) {
-    el.textContent = formatMoney(lineTotal(draft.items[index]), draft.currency);
+    const item = draft.items[index];
+    el.textContent = item.quantity === '' || item.price === '' ? '—' : formatMoney(lineTotal(item), draft.currency);
   }
 }
 
@@ -461,6 +484,7 @@ function onInput(e) {
   const { draft } = getState();
   const el = e.target;
 
+  el.parentElement?.querySelector('.field-error')?.remove();
   validateFieldVisual(el);
 
   if (el.name === 'client') {
@@ -487,4 +511,37 @@ function onInput(e) {
 
 function onFormSubmit(e) {
   e.preventDefault();
+}
+
+function onKeydown(e) {
+  const el = e.target;
+  const isTextInput = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
+
+  if (el?.dataset?.item) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const fields = Array.from(document.querySelectorAll('#items-area [data-item]'));
+      const index = fields.indexOf(el);
+      const next = fields[index + 1];
+      if (next) {
+        next.focus();
+      } else {
+        addItem();
+      }
+      return;
+    }
+    if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && (el.dataset.item === 'quantity' || el.dataset.item === 'price')) {
+      e.preventDefault();
+      const fields = Array.from(document.querySelectorAll('#items-area [data-item]'));
+      const index = fields.indexOf(el);
+      const targetIndex = e.key === 'ArrowUp' ? index - 3 : index + 3;
+      const target = fields[targetIndex];
+      if (target) target.focus();
+      return;
+    }
+  }
+
+  if (e.key === 'Enter' && isTextInput) {
+    e.preventDefault();
+  }
 }

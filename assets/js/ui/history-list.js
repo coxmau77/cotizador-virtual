@@ -13,9 +13,11 @@ export function historyMarkup() {
           <p class="view-subtitle">0 / ${CONFIG.QUOTE_LIMIT} guardadas</p>
         </div>
       </header>
+      <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
       <div class="empty-history">
         <p>No hay cotizaciones guardadas todavía.</p>
-        <p>Creá tu primera cotización desde “Nueva cotización”.</p>
+        <p>Creá tu primera cotización ahora.</p>
+        <button type="button" class="btn btn-primary" data-action="view-new">Crear cotización</button>
       </div>`;
   }
 
@@ -26,7 +28,11 @@ export function historyMarkup() {
         <h1>Historial</h1>
         <p class="view-subtitle">${quotes.length} / ${CONFIG.QUOTE_LIMIT} guardadas</p>
       </div>
+      <div class="view-actions">
+        <button type="button" class="btn btn-ghost btn-sm" data-action="export-json">Exportar respaldo (JSON)</button>
+      </div>
     </header>
+    <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
     <ul class="history-list">
       ${newestFirst.map(card).join('')}
     </ul>`;

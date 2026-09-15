@@ -18,10 +18,12 @@ export function resolveNumberCollision(base, existingNumbers = []) {
   return `${base}-${Date.now()}`;
 }
 
+const normNumber = (value) => (value === '' || value === null || value === undefined ? '' : Number(value));
+
 const normItem = (item) => ({
   description: String(item?.description ?? ''),
-  quantity: Number(item?.quantity) || 0,
-  price: Number(item?.price) || 0
+  quantity: normNumber(item?.quantity),
+  price: normNumber(item?.price)
 });
 
 export function createQuote({
@@ -71,8 +73,18 @@ export function validateQuote(quote) {
   } else {
     items.forEach((item, index) => {
       if (!String(item.description ?? '').trim()) errors[`item-${index}-description`] = 'Agregá una descripción.';
-      if (!(Number(item.quantity) > 0)) errors[`item-${index}-quantity`] = 'La cantidad debe ser mayor a 0.';
-      if (!(Number(item.price) >= 0)) errors[`item-${index}-price`] = 'El precio debe ser mayor o igual a 0.';
+      const quantity = item.quantity;
+      const price = item.price;
+      if (quantity === '' || quantity === null || quantity === undefined) {
+        errors[`item-${index}-quantity`] = 'Ingresá una cantidad.';
+      } else if (!(Number(quantity) > 0)) {
+        errors[`item-${index}-quantity`] = 'La cantidad debe ser mayor a 0.';
+      }
+      if (price === '' || price === null || price === undefined) {
+        errors[`item-${index}-price`] = 'Ingresá el precio.';
+      } else if (!(Number(price) >= 0)) {
+        errors[`item-${index}-price`] = 'El precio no puede ser negativo.';
+      }
     });
   }
 
