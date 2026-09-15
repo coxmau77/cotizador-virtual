@@ -42,7 +42,7 @@ function card(quote) {
   const calc = calculateQuote(quote);
   const itemCount = quote.items.length;
   return `
-    <li class="history-card">
+    <li class="history-card" data-number="${escapeHtml(quote.number)}">
       <div class="hc-head">
         <div>
           <h2 class="hc-number mono">${escapeHtml(quote.number)}</h2>
@@ -53,7 +53,6 @@ function card(quote) {
       <p class="hc-client">${escapeHtml(quote.client)}</p>
       <p class="hc-meta">${itemCount} item${itemCount === 1 ? '' : 's'} · ${formatMoney(calc.total, quote.currency)}</p>
       <div class="hc-actions">
-        <button type="button" class="btn btn-ghost btn-sm" data-action="duplicate-quote" data-number="${escapeHtml(quote.number)}">Duplicar</button>
         <button type="button" class="btn btn-ghost btn-sm" data-action="reprint-quote" data-number="${escapeHtml(quote.number)}">Reimprimir</button>
         <button type="button" class="btn btn-danger btn-sm" data-action="delete-quote" data-number="${escapeHtml(quote.number)}">Eliminar</button>
       </div>

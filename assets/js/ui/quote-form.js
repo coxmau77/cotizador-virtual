@@ -55,8 +55,6 @@ export function formMarkup() {
       <div class="action-bar">
         <button type="button" class="btn btn-primary" data-action="save-quote" id="btn-generate">Guardar cotización</button>
         <button type="button" class="btn btn-warning" data-action="save-overwrite" id="btn-overwrite" hidden>Reemplazar cotización más antigua</button>
-        <button type="button" class="btn btn-ghost" data-action="print-draft">Vista previa / Imprimir</button>
-        <button type="button" class="btn btn-ghost" data-action="clear-form">Limpiar</button>
       </div>
       <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
 

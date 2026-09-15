@@ -1,4 +1,4 @@
-import { getState, startNewDraft, duplicateIntoDraft, setQuotes, existingNumbers } from './state.js';
+import { getState, startNewDraft, setQuotes, existingNumbers } from './state.js';
 import { CONFIG } from './config.js';
 import { resolveNumberCollision, makeQuoteNumber, lineTotal, validateQuote, isItemComplete } from './quote.js';
 import { formatMoney } from './formatters.js';
@@ -17,14 +17,12 @@ import { sidebarMarkup } from './ui/sidebar.js';
 import { formMarkup, totalsMarkup } from './ui/quote-form.js';
 import { itemsMarkup } from './ui/quote-table.js';
 import { historyMarkup } from './ui/history-list.js';
-import { printDialogMarkup, buildPrintSheet, documentTitleFor } from './ui/print-view.js';
+import { openPrintPreview } from './ui/print-view.js';
 
 const clone = (value) => (typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)));
 
 let root = null;
-let dialog = null;
 let messageTimer = null;
-let currentPrintQuote = null;
 
 const VIEW_TITLES = {
   new: 'Nueva cotización · Cotizador Virtual',
@@ -33,9 +31,6 @@ const VIEW_TITLES = {
 
 export function init() {
   root = document.getElementById('app-main');
-  dialog = document.getElementById('print-dialog');
-  dialog.innerHTML = printDialogMarkup();
-  dialog.addEventListener('cancel', closePrint);
   document.addEventListener('click', onClick);
   document.addEventListener('change', onChange);
   document.addEventListener('input', onInput);
@@ -92,14 +87,14 @@ function updateFormState() {
   const btnGenerate = document.getElementById('btn-generate');
   const btnOverwrite = document.getElementById('btn-overwrite');
   if (!btnGenerate || !btnOverwrite) return;
-  const full = isAtLimit(getState().quotes);
-  if (full) {
-    btnGenerate.disabled = true;
-    btnOverwrite.hidden = false;
-  } else {
-    btnGenerate.disabled = false;
-    btnOverwrite.hidden = true;
-  }
+  const { draft, quotes } = getState();
+  const valid = Object.keys(validateQuote(draft)).length === 0;
+  const full = isAtLimit(quotes);
+  btnGenerate.disabled = full || !valid;
+  btnGenerate.title = !valid ? 'Completá los campos requeridos para guardar.' : '';
+  btnOverwrite.hidden = !full;
+  btnOverwrite.disabled = !valid;
+  btnOverwrite.title = !valid ? 'Completá los campos requeridos.' : '';
 }
 
 function setDocumentTitle(viewKey) {
@@ -212,13 +207,14 @@ function handleSaveQuote() {
     startNewDraft();
   }
 
-  render();
+  navigate('history');
 
   if (fullAfter) {
     showMessage(`Slot lleno (${CONFIG.QUOTE_LIMIT}): para crear otra cotización usá “Reemplazar cotización más antigua” o exportá un respaldo.`, 'warn');
   } else {
     showMessage(`Cotización guardada: ${savedNumber}.`, 'ok');
   }
+  flashNewQuote(savedNumber);
 }
 
 function handleSaveOverwrite() {
@@ -257,27 +253,20 @@ function handleSaveOverwrite() {
   showMessage(`Se reemplazó ${oldest.number}. Nueva cotización: ${freshNumber}.`, 'ok');
 }
 
-function handleClearForm() {
-  const { draft } = getState();
-  const hasContent = Boolean(draft.client)
-    || Boolean(draft.notes)
-    || draft.items.some((i) => i.description || i.quantity !== '' || i.price !== '');
-  if (hasContent && !window.confirm('¿Limpiar el formulario y empezar de nuevo?')) return;
-  startNewDraft();
-  render();
-}
-
 function findByNumber(number) {
   return getState().quotes.find((q) => q.number === number) || null;
 }
 
-function duplicateQuote(number) {
-  const quote = findByNumber(number);
-  if (!quote) return;
-  duplicateIntoDraft(quote);
-  getState().view = 'new';
-  render();
-  showMessage('Cotización duplicada. Guardala para asignar el nuevo número.', 'ok');
+const FLASH_DURATION_MS = 2400;
+
+function flashNewQuote(number) {
+  const card = root.querySelector(`[data-number="${number}"]`);
+  if (!card) return;
+  card.classList.add('history-card--saved');
+  setTimeout(() => {
+    const el = root.querySelector(`[data-number="${number}"]`);
+    if (el) el.classList.remove('history-card--saved');
+  }, FLASH_DURATION_MS);
 }
 
 function deleteQuote(number) {
@@ -298,6 +287,7 @@ function addItem() {
   renderItems();
   renderTotals();
   updateAddButton();
+  updateFormState();
   const first = document.querySelector('tr:last-child [data-item="description"]');
   if (first) first.focus();
 }
@@ -310,6 +300,7 @@ function removeItem(index) {
   renderItems();
   renderTotals();
   updateAddButton();
+  updateFormState();
 }
 
 function updateRowSubtotal(row, index) {
@@ -318,44 +309,6 @@ function updateRowSubtotal(row, index) {
   if (el && draft.items[index]) {
     const item = draft.items[index];
     el.textContent = item.quantity === '' || item.price === '' ? '—' : formatMoney(lineTotal(item), draft.currency);
-  }
-}
-
-/* ---------- Impresión ---------- */
-
-function printQuote(quote) {
-  if (!quote) return;
-  currentPrintQuote = quote;
-  const sheet = dialog.querySelector('#print-sheet');
-  sheet.innerHTML = buildPrintSheet(quote);
-  const shareBtn = dialog.querySelector('#btn-share');
-  shareBtn.hidden = !navigator.share;
-  document.title = documentTitleFor(quote);
-  document.body.classList.add('print-mode');
-  if (!dialog.open) dialog.showModal();
-  const printBtn = dialog.querySelector('[data-action="print-do"]');
-  if (printBtn) printBtn.focus();
-}
-
-function closePrint() {
-  if (dialog.open) dialog.close();
-  document.body.classList.remove('print-mode');
-  const sheet = dialog.querySelector('#print-sheet');
-  if (sheet) sheet.innerHTML = '';
-  currentPrintQuote = null;
-  setDocumentTitle(getState().view);
-}
-
-async function sharePrint() {
-  const sheetText = dialog.querySelector('#print-sheet')?.textContent || '';
-  if (!navigator.share) return;
-  try {
-    await navigator.share({
-      title: document.title,
-      text: `${document.title}\n${sheetText}`
-    });
-  } catch {
-    /* el usuario canceló el share */
   }
 }
 
@@ -439,33 +392,14 @@ function onClick(e) {
     case 'save-overwrite':
       handleSaveOverwrite();
       break;
-    case 'clear-form':
-      handleClearForm();
-      break;
-    case 'print-draft':
-      printQuote(getState().draft);
-      break;
-    case 'duplicate-quote':
-      duplicateQuote(actionEl.dataset.number);
-      break;
     case 'reprint-quote':
-      printQuote(findInDatabase(actionEl.dataset.number));
+      openPrintPreview(findInDatabase(actionEl.dataset.number));
       break;
     case 'delete-quote':
       deleteQuote(actionEl.dataset.number);
       break;
     case 'export-json':
       exportJSON();
-      break;
-    case 'print-do':
-      if (currentPrintQuote) printQuote(currentPrintQuote);
-      window.print();
-      break;
-    case 'print-cancel':
-      closePrint();
-      break;
-    case 'print-share':
-      sharePrint();
       break;
     default:
       break;
@@ -498,12 +432,14 @@ function onInput(e) {
 
   if (el.name === 'client') {
     draft.client = el.value;
+    updateFormState();
     return;
   }
 
   if (el.name === 'discount') {
     draft.discount = el.value;
     renderTotals();
+    updateFormState();
     return;
   }
 
@@ -521,6 +457,7 @@ function onInput(e) {
     updateRowSubtotal(el.closest('tr[data-index]'), index);
     renderTotals();
     updateAddButton();
+    updateFormState();
   }
 }
 

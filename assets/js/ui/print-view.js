@@ -2,21 +2,6 @@ import { EMISOR } from '../emisor.js';
 import { calculateQuote } from '../quote.js';
 import { formatMoney, formatDate, escapeHtml } from '../formatters.js';
 
-export function printDialogMarkup() {
-  return `
-    <div class="print-dialog-body">
-      <div class="print-controls">
-        <strong>Vista de impresión · A4</strong>
-        <div class="print-controls-actions">
-          <button type="button" class="btn btn-primary" data-action="print-do">Imprimir</button>
-          <button type="button" class="btn btn-ghost" data-action="print-share" id="btn-share" hidden>Compartir</button>
-          <button type="button" class="btn btn-ghost" data-action="print-cancel">Cerrar</button>
-        </div>
-      </div>
-      <div id="print-sheet" class="print-sheet"></div>
-    </div>`;
-}
-
 export function buildPrintSheet(quote) {
   const calc = calculateQuote(quote);
   const currency = quote.currency;
@@ -82,4 +67,49 @@ export function buildPrintSheet(quote) {
 
 export function documentTitleFor(quote) {
   return `${quote.number} - ${quote.client}`;
+}
+
+export function openPrintPreview(quote) {
+  if (!quote) return null;
+  const win = window.open('', '_blank');
+  if (!win) return null;
+
+  const sheetHtml = buildPrintSheet(quote);
+  const base = new URL('.', document.baseURI).href;
+  const css = (file) => `<link rel="stylesheet" href="${base + file}" />`;
+
+  win.document.open();
+  win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(documentTitleFor(quote))}</title>
+  ${css('assets/css/variables.css')}
+  ${css('assets/css/styles.css')}
+  ${css('assets/css/print.css')}
+  <style>
+    html, body { background: #eef1f5; margin: 0; }
+    body { display: flex; justify-content: center; padding: 24px 0; }
+    #print-sheet { margin: 0; }
+    @media print {
+      html, body { background: #fff; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="print-sheet" class="print-sheet">${sheetHtml}</div>
+  <script>
+    window.addEventListener('load', function () {
+      window.print();
+    });
+    window.addEventListener('afterprint', function () {
+      window.close();
+    });
+  </script>
+</body>
+</html>`);
+  win.document.close();
+  if (typeof win.focus === 'function') win.focus();
+  return win;
 }

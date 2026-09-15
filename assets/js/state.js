@@ -21,14 +21,3 @@ export function startNewDraft() {
 function emptyItem() {
   return { description: '', quantity: '', price: '' };
 }
-
-export function duplicateIntoDraft(quote) {
-  state.draft = createQuote({
-    client: quote.client,
-    currency: quote.currency,
-    discount: quote.discount,
-    items: quote.items.map((i) => ({ ...i })),
-    notes: quote.notes,
-    existingNumbers: existingNumbers().filter((n) => n !== quote.number)
-  });
-}

@@ -1,12 +1,3 @@
-/* Vista previa en pantalla mientras el dialog está abierto */
-body.print-mode {
-  overflow: hidden;
-}
-
-body.print-mode #print-dialog {
-  border: none;
-}
-
 /* ---------- Hoja A4 en pantalla y en impresión ---------- */
 
 .print-sheet {
@@ -174,42 +165,7 @@ body.print-mode #print-dialog {
     background: #fff;
   }
 
-  body.print-mode {
-    overflow: visible;
-  }
-
-  body.print-mode > :not(#print-dialog) {
-    display: none !important;
-  }
-
-  body.print-mode #print-dialog {
-    position: static;
-    display: block;
-    padding: 0;
-    margin: 0;
-    width: auto;
-    max-width: none;
-    border: none;
-    box-shadow: none;
-    background: #fff;
-  }
-
-  body.print-mode #print-dialog::backdrop {
-    background: none;
-    backdrop-filter: none;
-  }
-
-  body.print-mode .print-dialog-body {
-    max-height: none;
-    overflow: visible;
-    padding: 0;
-  }
-
-  body.print-mode .print-controls {
-    display: none !important;
-  }
-
-  body.print-mode .print-sheet {
+  .print-sheet {
     width: auto;
     max-width: none;
     margin: 0;
