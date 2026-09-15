@@ -18,7 +18,8 @@ export function historyMarkup() {
         <p>No hay cotizaciones guardadas todavía.</p>
         <p>Creá tu primera cotización ahora.</p>
         <button type="button" class="btn btn-primary" data-action="view-new">Crear cotización</button>
-      </div>`;
+      </div>
+      ${backupBarMarkup()}`;
   }
 
   const newestFirst = [...quotes].reverse();
@@ -28,14 +29,26 @@ export function historyMarkup() {
         <h1>Historial</h1>
         <p class="view-subtitle">${quotes.length} / ${CONFIG.QUOTE_LIMIT} guardadas</p>
       </div>
-      <div class="view-actions">
-        <button type="button" class="btn btn-ghost btn-sm" data-action="export-json">Exportar respaldo (JSON)</button>
-      </div>
     </header>
     <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
     <ul class="history-list">
       ${newestFirst.map(card).join('')}
-    </ul>`;
+    </ul>
+    ${backupBarMarkup()}`;
+}
+
+function backupBarMarkup() {
+  const { quotes } = getState();
+  const slotsFree = quotes.length === 0;
+  const importTitle = slotsFree
+    ? ''
+    : 'No es posible importar: los slots de almacenamiento no son suficientes.';
+  return `
+    <div class="backup-bar">
+      <button type="button" class="btn btn-ghost btn-sm" data-action="export-json">Exportar respaldo (JSON)</button>
+      <label class="btn btn-ghost btn-sm file-label${slotsFree ? '' : ' is-disabled'}" data-action="import-toggle" title="${escapeHtml(importTitle)}">Importar respaldo (JSON)<input type="file" accept="application/json,.json" data-action="import-json" hidden /></label>
+      <span class="backup-hint" title="El cotizador no se responsabiliza por eliminaciones realizadas por el usuario ni garantiza el historial como respaldo. La app solo se limita a la creación de cotizaciones, no al almacenamiento de documentos.">El respaldo JSON evita perder cotizaciones ante el límite de slots.</span>
+    </div>`;
 }
 
 function card(quote) {

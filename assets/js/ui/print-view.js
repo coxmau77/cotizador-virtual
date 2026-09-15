@@ -2,7 +2,7 @@ import { EMISOR } from '../emisor.js';
 import { calculateQuote } from '../quote.js';
 import { formatMoney, formatDate, escapeHtml } from '../formatters.js';
 
-export function buildPrintSheet(quote) {
+export function buildPrintSheet(quote, base = '') {
   const calc = calculateQuote(quote);
   const currency = quote.currency;
 
@@ -28,10 +28,13 @@ export function buildPrintSheet(quote) {
   return `
     <header class="print-header">
       <div class="ph-brand">
-        <h1>${escapeHtml(EMISOR.name)}</h1>
-        <p>${escapeHtml(EMISOR.document)}</p>
-        <p>${escapeHtml(EMISOR.address)}</p>
-        <p>${escapeHtml(EMISOR.phone)}${EMISOR.email ? ` · ${escapeHtml(EMISOR.email)}` : ''}</p>
+        <img class="ph-logo" src="${base}assets/img/user-logo.png" alt="" />
+        <div class="ph-text">
+          <h1>${escapeHtml(EMISOR.name)}</h1>
+          <p>${escapeHtml(EMISOR.document)}</p>
+          <p>${escapeHtml(EMISOR.address)}</p>
+          <p>${escapeHtml(EMISOR.phone)}${EMISOR.email ? ` · ${escapeHtml(EMISOR.email)}` : ''}</p>
+        </div>
       </div>
       <div class="ph-doc">
         <p class="ph-doc-label">Cotización</p>
@@ -74,8 +77,8 @@ export function openPrintPreview(quote) {
   const win = window.open('', '_blank');
   if (!win) return null;
 
-  const sheetHtml = buildPrintSheet(quote);
   const base = new URL('.', document.baseURI).href;
+  const sheetHtml = buildPrintSheet(quote, base);
   const css = (file) => `<link rel="stylesheet" href="${base + file}" />`;
 
   win.document.open();

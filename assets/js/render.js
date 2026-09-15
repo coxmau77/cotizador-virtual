@@ -340,6 +340,13 @@ function handleImportFile(inputEl) {
   const resetInput = () => { inputEl.value = ''; };
   if (!file) return;
 
+  const isJson = file.type === 'application/json' || /\.json$/i.test(file.name);
+  if (!isJson) {
+    showMessage('El respaldo debe ser un archivo en formato JSON (.json).', 'error');
+    resetInput();
+    return;
+  }
+
   const reader = new FileReader();
   reader.onerror = () => {
     showMessage('No se pudo leer el archivo.', 'error');
@@ -348,7 +355,11 @@ function handleImportFile(inputEl) {
   reader.onload = () => {
     try {
       const quotes = parseJSON(String(reader.result));
-      if (!window.confirm(`Se reemplazarán las ${getState().quotes.length} cotizaciones actuales por ${quotes.length} importadas. ¿Continuar?`)) return;
+      if (getState().quotes.length + quotes.length > CONFIG.QUOTE_LIMIT) {
+        showMessage('No es posible importar porque los slots de almacenamiento no son suficientes. Contactá al desarrollador.', 'error');
+        return;
+      }
+      if (!window.confirm(`Se importarán ${quotes.length} cotizaciones. ¿Continuar?`)) return;
       setQuotes(quotes);
       persist();
       startNewDraft();
@@ -368,8 +379,17 @@ function handleImportFile(inputEl) {
 function onClick(e) {
   const actionEl = e.target.closest('[data-action]');
   if (!actionEl) return;
-  e.preventDefault();
   const action = actionEl.dataset.action;
+
+  if (action === 'import-toggle') {
+    if (getState().quotes.length > 0) {
+      e.preventDefault();
+      showMessage('No es posible importar porque los slots de almacenamiento no son suficientes. Contactá al desarrollador.', 'error');
+    }
+    return;
+  }
+
+  e.preventDefault();
 
   switch (action) {
     case 'view-new':

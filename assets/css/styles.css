@@ -505,6 +505,11 @@ input:out-of-range {
   cursor: pointer;
 }
 
+.file-label.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ---------- History ---------- */
 
 .history-list {

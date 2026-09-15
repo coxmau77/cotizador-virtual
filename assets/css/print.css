@@ -38,6 +38,23 @@
   color: #444b57;
 }
 
+.ph-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ph-logo {
+  height: 56px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 10vw;
+}
+
+.ph-text {
+  min-width: 0;
+}
+
 .ph-brand h1 {
   margin-bottom: 4px;
 }

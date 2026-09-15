@@ -57,12 +57,6 @@ export function formMarkup() {
         <button type="button" class="btn btn-warning" data-action="save-overwrite" id="btn-overwrite" hidden>Reemplazar cotización más antigua</button>
       </div>
       <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
-
-      <div class="backup-bar">
-        <button type="button" class="btn btn-ghost btn-sm" data-action="export-json">Exportar respaldo (JSON)</button>
-        <label class="btn btn-ghost btn-sm file-label">Importar respaldo (JSON)<input type="file" accept="application/json,.json" data-action="import-json" hidden /></label>
-        <span class="backup-hint">El respaldo JSON evita perder cotizaciones ante el límite de slots.</span>
-      </div>
     </form>`;
 }
 
