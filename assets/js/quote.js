@@ -1,0 +1,85 @@
+import { CONFIG } from './config.js';
+
+export const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
+export function makeQuoteNumber(date = new Date()) {
+  const p = (n) => pad2(n);
+  return `COT-${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}`;
+}
+
+export function resolveNumberCollision(base, existingNumbers = []) {
+  if (!existingNumbers.includes(base)) return base;
+  for (const suffix of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+    const candidate = `${base}-${suffix}`;
+    if (!existingNumbers.includes(candidate)) return candidate;
+  }
+  return `${base}-${Date.now()}`;
+}
+
+const normItem = (item) => ({
+  description: String(item?.description ?? ''),
+  quantity: Number(item?.quantity) || 0,
+  price: Number(item?.price) || 0
+});
+
+export function createQuote({
+  client = '',
+  currency = CONFIG.DEFAULT_CURRENCY,
+  discount = 0,
+  items = [],
+  notes = '',
+  number = null,
+  date = new Date(),
+  existingNumbers = []
+} = {}) {
+  return {
+    number: number || resolveNumberCollision(makeQuoteNumber(date), existingNumbers),
+    date: date.toISOString(),
+    client: String(client),
+    currency,
+    discount: Number(discount) || 0,
+    items: items.map(normItem),
+    notes: String(notes),
+    status: 'generado'
+  };
+}
+
+export const lineTotal = (item) => round2((Number(item.quantity) || 0) * (Number(item.price) || 0));
+
+export function calculateQuote(quote) {
+  const currency = CONFIG.CURRENCIES.find((c) => c.code === quote.currency) || CONFIG.CURRENCIES[0];
+  const items = quote.items.map((item) => ({ ...item, subtotal: lineTotal(item) }));
+  const subtotal = round2(items.reduce((sum, item) => sum + item.subtotal, 0));
+  const discount = Math.min(Math.max(Number(quote.discount) || 0, 0), 100);
+  const discountAmount = round2(subtotal * (discount / 100));
+  const base = round2(subtotal - discountAmount);
+  const taxRate = currency.tax;
+  const tax = taxRate ? round2(base * taxRate) : 0;
+  const total = round2(base + tax);
+  return { items, subtotal, discount, discountAmount, base, tax, taxRate, total, currency };
+}
+
+export function validateQuote(quote) {
+  const errors = {};
+  if (!String(quote.client ?? '').trim()) errors.client = 'Ingresá el nombre del cliente.';
+
+  const items = Array.isArray(quote.items) ? quote.items : [];
+  if (!items.length) {
+    errors.items = 'Agregá al menos un item.';
+  } else {
+    items.forEach((item, index) => {
+      if (!String(item.description ?? '').trim()) errors[`item-${index}-description`] = 'Agregá una descripción.';
+      if (!(Number(item.quantity) > 0)) errors[`item-${index}-quantity`] = 'La cantidad debe ser mayor a 0.';
+      if (!(Number(item.price) >= 0)) errors[`item-${index}-price`] = 'El precio debe ser mayor o igual a 0.';
+    });
+  }
+
+  const discount = Number(quote.discount);
+  if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
+    errors.discount = 'El descuento debe estar entre 0 y 100.';
+  }
+
+  return errors;
+}

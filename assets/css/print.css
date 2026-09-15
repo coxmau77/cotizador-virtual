@@ -1,0 +1,228 @@
+/* Vista previa en pantalla mientras el dialog está abierto */
+body.print-mode {
+  overflow: hidden;
+}
+
+body.print-mode #print-dialog {
+  border: none;
+}
+
+/* ---------- Hoja A4 en pantalla y en impresión ---------- */
+
+.print-sheet {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: #131722;
+}
+
+.print-sheet h1 {
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+.print-sheet h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5b6472;
+  margin-bottom: 4px;
+}
+
+.print-sheet p {
+  margin: 0 0 3px;
+}
+
+.print-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding-bottom: 12mm;
+  border-bottom: 3px solid #131722;
+}
+
+.print-header p {
+  font-size: 12px;
+  color: #444b57;
+}
+
+.ph-brand h1 {
+  margin-bottom: 4px;
+}
+
+.ph-doc {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ph-doc-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5b6472;
+}
+
+.ph-doc-number {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: #131722;
+  margin: 2px 0 6px;
+}
+
+.print-client {
+  padding: 8mm 0 4mm;
+}
+
+.print-client p {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.print-items {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2mm;
+}
+
+.print-items th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #5b6472;
+  padding: 5px 8px;
+  border-bottom: 1px solid #131722;
+}
+
+.print-items td {
+  padding: 7px 8px;
+  font-size: 13px;
+  border-bottom: 1px solid #e3e6ea;
+  vertical-align: top;
+}
+
+.print-items td:last-child,
+.print-items td:nth-child(3),
+.print-items td:nth-child(4),
+.print-items .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.print-totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: 6mm;
+  padding-left: 40mm;
+}
+
+.pt-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding: 2px 0;
+  font-size: 13px;
+}
+
+.pt-line strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.pt-total {
+  margin-top: 3mm;
+  padding-top: 4px;
+  border-top: 2px solid #131722;
+  font-size: 16px;
+}
+
+.pt-total strong {
+  font-size: 17px;
+}
+
+.print-notes {
+  margin-top: 8mm;
+}
+
+.print-notes p {
+  white-space: pre-wrap;
+  font-size: 13px;
+}
+
+.print-footer {
+  margin-top: 12mm;
+  padding-top: 4mm;
+  border-top: 1px solid #dbe1e8;
+  font-size: 11px;
+  color: #5b6472;
+}
+
+/* ---------- Impresión ---------- */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  body.print-mode {
+    overflow: visible;
+  }
+
+  body.print-mode > :not(#print-dialog) {
+    display: none !important;
+  }
+
+  body.print-mode #print-dialog {
+    position: static;
+    display: block;
+    padding: 0;
+    margin: 0;
+    width: auto;
+    max-width: none;
+    border: none;
+    box-shadow: none;
+    background: #fff;
+  }
+
+  body.print-mode #print-dialog::backdrop {
+    background: none;
+    backdrop-filter: none;
+  }
+
+  body.print-mode .print-dialog-body {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  body.print-mode .print-controls {
+    display: none !important;
+  }
+
+  body.print-mode .print-sheet {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .print-header {
+    padding-bottom: 8mm;
+  }
+
+  .print-client {
+    padding-top: 6mm;
+  }
+}
