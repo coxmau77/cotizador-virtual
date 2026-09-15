@@ -4,8 +4,7 @@ import { calculateQuote } from '../quote.js';
 import { formatMoney, escapeHtml } from '../formatters.js';
 
 export function formMarkup() {
-  const { draft, editingNumber } = getState();
-  const isEditing = Boolean(editingNumber);
+  const { draft } = getState();
   const currencyOptions = CONFIG.CURRENCIES
     .map((c) => `<option value="${c.code}" ${c.code === draft.currency ? 'selected' : ''}>${c.code} · ${escapeHtml(c.name)}</option>`)
     .join('');
@@ -13,7 +12,7 @@ export function formMarkup() {
   return `
     <header class="view-header">
       <div>
-        <h1>${isEditing ? 'Editar cotización' : 'Nueva cotización'}</h1>
+        <h1>Nueva cotización</h1>
         <p class="view-subtitle"><span class="mono">${escapeHtml(draft.number)}</span> · <span id="form-currency-label">${escapeHtml(draft.currency)}</span></p>
       </div>
     </header>
@@ -54,7 +53,7 @@ export function formMarkup() {
       </div>
 
       <div class="action-bar">
-        <button type="button" class="btn btn-primary" data-action="save-quote" id="btn-generate">${isEditing ? 'Guardar cambios' : 'Guardar cotización'}</button>
+        <button type="button" class="btn btn-primary" data-action="save-quote" id="btn-generate">Guardar cotización</button>
         <button type="button" class="btn btn-warning" data-action="save-overwrite" id="btn-overwrite" hidden>Reemplazar cotización más antigua</button>
         <button type="button" class="btn btn-ghost" data-action="print-draft">Vista previa / Imprimir</button>
         <button type="button" class="btn btn-ghost" data-action="clear-form">Limpiar</button>

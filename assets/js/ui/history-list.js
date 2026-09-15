@@ -53,7 +53,6 @@ function card(quote) {
       <p class="hc-client">${escapeHtml(quote.client)}</p>
       <p class="hc-meta">${itemCount} item${itemCount === 1 ? '' : 's'} · ${formatMoney(calc.total, quote.currency)}</p>
       <div class="hc-actions">
-        <button type="button" class="btn btn-ghost btn-sm" data-action="edit-quote" data-number="${escapeHtml(quote.number)}">Editar</button>
         <button type="button" class="btn btn-ghost btn-sm" data-action="duplicate-quote" data-number="${escapeHtml(quote.number)}">Duplicar</button>
         <button type="button" class="btn btn-ghost btn-sm" data-action="reprint-quote" data-number="${escapeHtml(quote.number)}">Reimprimir</button>
         <button type="button" class="btn btn-danger btn-sm" data-action="delete-quote" data-number="${escapeHtml(quote.number)}">Eliminar</button>

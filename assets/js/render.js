@@ -1,4 +1,4 @@
-import { getState, startNewDraft, loadDraft, duplicateIntoDraft, setQuotes, existingNumbers } from './state.js';
+import { getState, startNewDraft, duplicateIntoDraft, setQuotes, existingNumbers } from './state.js';
 import { CONFIG } from './config.js';
 import { resolveNumberCollision, makeQuoteNumber, lineTotal, validateQuote, isItemComplete } from './quote.js';
 import { formatMoney } from './formatters.js';
@@ -89,13 +89,11 @@ function updateAddButton() {
 }
 
 function updateFormState() {
-  const state = getState();
   const btnGenerate = document.getElementById('btn-generate');
   const btnOverwrite = document.getElementById('btn-overwrite');
   if (!btnGenerate || !btnOverwrite) return;
-  const isNew = !state.editingNumber;
-  const full = isAtLimit(state.quotes);
-  if (isNew && full) {
+  const full = isAtLimit(getState().quotes);
+  if (full) {
     btnGenerate.disabled = true;
     btnOverwrite.hidden = false;
   } else {
@@ -200,10 +198,7 @@ function handleSaveQuote() {
     return;
   }
 
-  const wasNew = !state.editingNumber;
-  if (wasNew) {
-    state.draft.number = resolveNumberCollision(state.draft.number || makeQuoteNumber(), existingNumbers());
-  }
+  state.draft.number = resolveNumberCollision(state.draft.number || makeQuoteNumber(), existingNumbers());
   const savedNumber = state.draft.number;
   pushQuote(state.quotes, clone(state.draft));
 
@@ -213,16 +208,16 @@ function handleSaveQuote() {
   }
 
   const fullAfter = isAtLimit(state.quotes);
-  if (wasNew && !fullAfter) {
+  if (!fullAfter) {
     startNewDraft();
   }
 
   render();
 
-  if (wasNew && fullAfter) {
+  if (fullAfter) {
     showMessage(`Slot lleno (${CONFIG.QUOTE_LIMIT}): para crear otra cotización usá “Reemplazar cotización más antigua” o exportá un respaldo.`, 'warn');
   } else {
-    showMessage(wasNew ? `Cotización guardada: ${savedNumber}.` : `Cambios guardados en ${savedNumber}.`, 'ok');
+    showMessage(`Cotización guardada: ${savedNumber}.`, 'ok');
   }
 }
 
@@ -274,14 +269,6 @@ function handleClearForm() {
 
 function findByNumber(number) {
   return getState().quotes.find((q) => q.number === number) || null;
-}
-
-function editQuote(number) {
-  const quote = findByNumber(number);
-  if (!quote) return;
-  loadDraft(quote);
-  getState().view = 'new';
-  render();
 }
 
 function duplicateQuote(number) {
@@ -457,9 +444,6 @@ function onClick(e) {
       break;
     case 'print-draft':
       printQuote(getState().draft);
-      break;
-    case 'edit-quote':
-      editQuote(actionEl.dataset.number);
       break;
     case 'duplicate-quote':
       duplicateQuote(actionEl.dataset.number);
