@@ -1,6 +1,6 @@
 import { getState, startNewDraft, loadDraft, duplicateIntoDraft, setQuotes, existingNumbers } from './state.js';
 import { CONFIG } from './config.js';
-import { resolveNumberCollision, makeQuoteNumber, lineTotal, validateQuote } from './quote.js';
+import { resolveNumberCollision, makeQuoteNumber, lineTotal, validateQuote, isItemComplete } from './quote.js';
 import { formatMoney } from './formatters.js';
 import {
   isAtLimit,
@@ -9,7 +9,9 @@ import {
   deleteQuote as removeQuoteNumber,
   oldestQuote,
   exportJSONString,
-  parseJSON
+  parseJSON,
+  loadQuotes,
+  findInDatabase
 } from './storage.js';
 import { sidebarMarkup } from './ui/sidebar.js';
 import { formMarkup, totalsMarkup } from './ui/quote-form.js';
@@ -22,6 +24,7 @@ const clone = (value) => (typeof structuredClone === 'function' ? structuredClon
 let root = null;
 let dialog = null;
 let messageTimer = null;
+let currentPrintQuote = null;
 
 const VIEW_TITLES = {
   new: 'Nueva cotización · Cotizador Virtual',
@@ -45,6 +48,7 @@ export function render() {
   const state = getState();
   renderSidebar();
   if (state.view === 'history') {
+    setQuotes(loadQuotes());
     root.innerHTML = historyMarkup();
     setDocumentTitle('history');
   } else {
@@ -52,6 +56,7 @@ export function render() {
     renderItems();
     renderTotals();
     updateFormState();
+    updateAddButton();
     setDocumentTitle('new');
   }
 }
@@ -70,6 +75,17 @@ function renderItems() {
 function renderTotals() {
   const area = document.getElementById('totals-area');
   area.innerHTML = totalsMarkup();
+}
+
+function updateAddButton() {
+  const btn = document.querySelector('[data-action="add-item"]');
+  if (!btn) return;
+  const { draft } = getState();
+  const last = draft.items[draft.items.length - 1];
+  const complete = isItemComplete(last);
+  btn.disabled = !complete;
+  btn.setAttribute('aria-disabled', complete ? 'false' : 'true');
+  btn.title = complete ? '' : 'Completá la fila actual para agregar otro item';
 }
 
 function updateFormState() {
@@ -289,11 +305,14 @@ function deleteQuote(number) {
 
 function addItem() {
   const { draft } = getState();
+  const last = draft.items[draft.items.length - 1];
+  if (!isItemComplete(last)) return;
   draft.items.push({ description: '', quantity: '', price: '' });
   renderItems();
   renderTotals();
-  const last = document.querySelector('tr:last-child [data-item="description"]');
-  if (last) last.focus();
+  updateAddButton();
+  const first = document.querySelector('tr:last-child [data-item="description"]');
+  if (first) first.focus();
 }
 
 function removeItem(index) {
@@ -303,6 +322,7 @@ function removeItem(index) {
   if (!draft.items.length) draft.items.push({ description: '', quantity: '', price: '' });
   renderItems();
   renderTotals();
+  updateAddButton();
 }
 
 function updateRowSubtotal(row, index) {
@@ -318,6 +338,7 @@ function updateRowSubtotal(row, index) {
 
 function printQuote(quote) {
   if (!quote) return;
+  currentPrintQuote = quote;
   const sheet = dialog.querySelector('#print-sheet');
   sheet.innerHTML = buildPrintSheet(quote);
   const shareBtn = dialog.querySelector('#btn-share');
@@ -332,6 +353,9 @@ function printQuote(quote) {
 function closePrint() {
   if (dialog.open) dialog.close();
   document.body.classList.remove('print-mode');
+  const sheet = dialog.querySelector('#print-sheet');
+  if (sheet) sheet.innerHTML = '';
+  currentPrintQuote = null;
   setDocumentTitle(getState().view);
 }
 
@@ -441,7 +465,7 @@ function onClick(e) {
       duplicateQuote(actionEl.dataset.number);
       break;
     case 'reprint-quote':
-      printQuote(findByNumber(actionEl.dataset.number));
+      printQuote(findInDatabase(actionEl.dataset.number));
       break;
     case 'delete-quote':
       deleteQuote(actionEl.dataset.number);
@@ -450,6 +474,7 @@ function onClick(e) {
       exportJSON();
       break;
     case 'print-do':
+      if (currentPrintQuote) printQuote(currentPrintQuote);
       window.print();
       break;
     case 'print-cancel':
@@ -498,6 +523,11 @@ function onInput(e) {
     return;
   }
 
+  if (el.name === 'notes') {
+    draft.notes = el.value;
+    return;
+  }
+
   if (el.dataset.item) {
     const index = Number(el.closest('tr[data-index]')?.dataset.index);
     if (Number.isNaN(index) || !draft.items[index]) return;
@@ -506,6 +536,7 @@ function onInput(e) {
     else if (el.dataset.item === 'price') draft.items[index].price = el.value;
     updateRowSubtotal(el.closest('tr[data-index]'), index);
     renderTotals();
+    updateAddButton();
   }
 }
 
@@ -523,11 +554,7 @@ function onKeydown(e) {
       const fields = Array.from(document.querySelectorAll('#items-area [data-item]'));
       const index = fields.indexOf(el);
       const next = fields[index + 1];
-      if (next) {
-        next.focus();
-      } else {
-        addItem();
-      }
+      if (next) next.focus();
       return;
     }
     if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && (el.dataset.item === 'quantity' || el.dataset.item === 'price')) {

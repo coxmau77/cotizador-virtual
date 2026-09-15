@@ -423,13 +423,17 @@ input:out-of-range {
   color: #fff;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: var(--color-primary-dark);
 }
 
-.btn-primary:disabled {
-  background: #b6c4d6;
+.btn:disabled {
+  background: #cdd3da;
+  color: #7c8590;
+  border-color: #cdd3da;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-warning {
@@ -437,7 +441,7 @@ input:out-of-range {
   color: #fff;
 }
 
-.btn-warning:hover {
+.btn-warning:hover:not(:disabled) {
   background: #8f4e00;
 }
 
@@ -447,7 +451,7 @@ input:out-of-range {
   color: var(--color-text);
 }
 
-.btn-ghost:hover {
+.btn-ghost:hover:not(:disabled) {
   background: var(--color-surface-alt);
   border-color: var(--color-primary);
   color: var(--color-primary-dark);
@@ -458,7 +462,7 @@ input:out-of-range {
   color: #fff;
 }
 
-.btn-danger:hover {
+.btn-danger:hover:not(:disabled) {
   background: #b3261e;
 }
 

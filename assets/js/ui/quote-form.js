@@ -41,7 +41,7 @@ export function formMarkup() {
       <div class="card form-items">
         <h2 class="card-title">Items</h2>
         <div id="items-area"></div>
-        <button type="button" class="btn btn-ghost btn-sm" data-action="add-item">+ Agregar item</button>
+        <button type="button" class="btn btn-primary btn-sm" data-action="add-item">+ Agregar item</button>
       </div>
 
       <div id="totals-area"></div>

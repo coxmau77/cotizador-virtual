@@ -95,3 +95,12 @@ export function validateQuote(quote) {
 
   return errors;
 }
+
+export function isItemComplete(item) {
+  if (!item || !String(item.description ?? '').trim()) return false;
+  const quantity = item.quantity;
+  const price = item.price;
+  if (quantity === '' || quantity === null || quantity === undefined || !(Number(quantity) > 0)) return false;
+  if (price === '' || price === null || price === undefined || !(Number(price) >= 0)) return false;
+  return true;
+}

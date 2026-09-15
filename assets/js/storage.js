@@ -1,6 +1,8 @@
 import { CONFIG } from './config.js';
 
 const STORAGE_KEY = 'cotizador-v0.1:quotes';
+const SEED_FLAG_KEY = 'cotizador-v0.1:seeded';
+const SEED_NUMBERS = new Set(['COT-20260903-101500', 'COT-20260910-163045']);
 
 function isValidQuote(q) {
   return Boolean(q && typeof q === 'object'
@@ -10,13 +12,17 @@ function isValidQuote(q) {
     && Array.isArray(q.items));
 }
 
+function parseDatabase(raw) {
+  if (!raw) return { quotes: [] };
+  const data = JSON.parse(raw);
+  const quotes = Array.isArray(data) ? data : Array.isArray(data?.quotes) ? data.quotes : [];
+  return { quotes: quotes.filter(isValidQuote) };
+}
+
 export function loadQuotes() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const data = JSON.parse(raw);
-    const quotes = Array.isArray(data) ? data : Array.isArray(data?.quotes) ? data.quotes : [];
-    return quotes.filter(isValidQuote);
+    return parseDatabase(raw).quotes;
   } catch {
     return [];
   }
@@ -24,11 +30,30 @@ export function loadQuotes() {
 
 export function saveQuotes(quotes) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(quotes));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ quotes }));
     return true;
   } catch {
     return false;
   }
+}
+
+export function migrateDatabase() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const { quotes } = parseDatabase(raw);
+    const cleaned = quotes.filter((q) => !SEED_NUMBERS.has(q.number));
+    if (!raw || cleaned.length !== quotes.length || !raw.trim().startsWith('{')) {
+      saveQuotes(cleaned);
+    }
+    localStorage.removeItem(SEED_FLAG_KEY);
+    return cleaned;
+  } catch {
+    return loadQuotes();
+  }
+}
+
+export function findInDatabase(number) {
+  return loadQuotes().find((q) => q.number === number) || null;
 }
 
 export function isAtLimit(quotes) {
