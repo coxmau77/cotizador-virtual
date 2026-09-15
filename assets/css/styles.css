@@ -637,11 +637,10 @@ input:out-of-range {
   width: 210mm;
   max-width: calc(100vw - 48px);
   margin: 0 auto;
-  padding: 14mm 16mm;
-  background: var(--color-surface);
+  padding: 12mm;
+  background: #fff;
   color: #131722;
   box-shadow: var(--shadow-md);
-  border-radius: var(--radius-sm);
 }
 
 /* ---------- Responsive ---------- */

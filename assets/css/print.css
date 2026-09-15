@@ -75,6 +75,7 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 2mm;
+  table-layout: fixed;
 }
 
 .print-items th {
@@ -86,6 +87,11 @@
   padding: 5px 8px;
   border-bottom: 1px solid #131722;
 }
+
+.print-items th:nth-child(1) { width: 8mm; }
+.print-items th:nth-child(3) { width: 16mm; }
+.print-items th:nth-child(4) { width: 34mm; }
+.print-items th:nth-child(5) { width: 36mm; }
 
 .print-items td {
   padding: 7px 8px;
@@ -168,10 +174,22 @@
   .print-sheet {
     width: auto;
     max-width: none;
+    min-height: 0;
     margin: 0;
     padding: 0;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  .print-sheet h1,
+  .print-client,
+  .print-notes,
+  .print-footer {
+    break-inside: avoid;
+  }
+
+  .print-items tr {
+    break-inside: avoid;
   }
 
   .print-header {

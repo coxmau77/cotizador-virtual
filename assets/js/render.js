@@ -392,7 +392,7 @@ function onClick(e) {
     case 'save-overwrite':
       handleSaveOverwrite();
       break;
-    case 'reprint-quote':
+    case 'preview-quote':
       openPrintPreview(findInDatabase(actionEl.dataset.number));
       break;
     case 'delete-quote':

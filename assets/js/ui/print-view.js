@@ -89,20 +89,54 @@ export function openPrintPreview(quote) {
   ${css('assets/css/styles.css')}
   ${css('assets/css/print.css')}
   <style>
-    html, body { background: #eef1f5; margin: 0; }
-    body { display: flex; justify-content: center; padding: 24px 0; }
+    html, body { background: #e8edf3; margin: 0; }
+    body { display: flex; flex-direction: column; align-items: center; padding: 24px 0; }
     #print-sheet { margin: 0; }
+    .print-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      padding: 10px 0;
+      background: rgba(232, 237, 243, 0.92);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 1px 0 rgba(16, 24, 40, 0.08);
+    }
+    .print-toolbar button {
+      font: inherit;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-print {
+      background: #1a6df2;
+      color: #fff;
+      border: 1px solid #1a6df2;
+    }
+    .btn-print:hover { background: #1558c4; }
+    .btn-close {
+      background: #fff;
+      color: #131722;
+      border: 1px solid #c3ccd6;
+    }
+    .btn-close:hover { background: #f8fafc; }
     @media print {
       html, body { background: #fff; padding: 0; }
+      .print-toolbar { display: none !important; }
     }
   </style>
 </head>
 <body>
+  <div class="print-toolbar">
+    <button type="button" class="btn-print" onclick="window.print()">Imprimir / Exportar PDF</button>
+    <button type="button" class="btn-close" onclick="window.close()">Cerrar</button>
+  </div>
   <div id="print-sheet" class="print-sheet">${sheetHtml}</div>
   <script>
-    window.addEventListener('load', function () {
-      window.print();
-    });
     window.addEventListener('afterprint', function () {
       window.close();
     });
