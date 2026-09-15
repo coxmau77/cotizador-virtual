@@ -41,9 +41,11 @@ export function init() {
 
 export function render() {
   const state = getState();
-  renderSidebar();
   if (state.view === 'history') {
     setQuotes(loadQuotes());
+  }
+  renderSidebar();
+  if (state.view === 'history') {
     root.innerHTML = historyMarkup();
     setDocumentTitle('history');
   } else {
@@ -279,6 +281,15 @@ function deleteQuote(number) {
   showMessage('Cotización eliminada.', 'ok');
 }
 
+function clearHistory() {
+  if (!getState().quotes.length) return;
+  if (!window.confirm('Se borrarán todas las cotizaciones guardadas. Esta acción no se puede deshacer.\n\n¿Continuar?')) return;
+  setQuotes([]);
+  persist();
+  render();
+  showMessage('Historial borrado.', 'ok');
+}
+
 function addItem() {
   const { draft } = getState();
   const last = draft.items[draft.items.length - 1];
@@ -417,6 +428,9 @@ function onClick(e) {
       break;
     case 'delete-quote':
       deleteQuote(actionEl.dataset.number);
+      break;
+    case 'clear-history':
+      clearHistory();
       break;
     case 'export-json':
       exportJSON();

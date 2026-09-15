@@ -22,7 +22,7 @@ export function historyMarkup() {
       ${backupBarMarkup()}`;
   }
 
-  const newestFirst = [...quotes].reverse();
+  const newestFirst = [...quotes].sort((a, b) => +new Date(b.date) - +new Date(a.date));
   return `
     <header class="view-header">
       <div>
