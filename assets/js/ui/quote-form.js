@@ -8,13 +8,14 @@ export function formMarkup() {
   const currencyOptions = CONFIG.CURRENCIES
     .map((c) => `<option value="${c.code}" ${c.code === draft.currency ? 'selected' : ''}>${c.code} · ${escapeHtml(c.name)}</option>`)
     .join('');
-  const validUntilError = (() => {
+  const validUntilWarning = (() => {
     const v = draft.validUntil;
     if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(String(v)) || String(v) <= toISODate(new Date())) {
-      return '<p class="field-error">La fecha de validez debe ser posterior a hoy.</p>';
+      return '<p class="field-warning">La fecha de validez debe ser posterior a hoy.</p>';
     }
     return '';
   })();
+  const validUntilWarned = Boolean(validUntilWarning);
 
   return `
     <form id="quote-form" autocomplete="on">
@@ -37,8 +38,8 @@ export function formMarkup() {
         </div>
         <label class="field" for="validUntil">
           <span>Válida hasta</span>
-          <input id="validUntil" name="validUntil" type="date" min="${makeValidUntil(new Date(), 1)}" value="${draft.validUntil}" required />
-          ${validUntilError}
+          <input id="validUntil" name="validUntil" type="date" min="${makeValidUntil(new Date(), 1)}" value="${draft.validUntil}" required class="${validUntilWarned ? 'is-warning' : ''}" />
+          ${validUntilWarning}
         </label>
       </div>
 

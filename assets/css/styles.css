@@ -386,6 +386,25 @@ input:out-of-range {
   line-height: 1.3;
 }
 
+.field-warning {
+  margin-top: var(--space-1);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-warning);
+  line-height: 1.3;
+}
+
+input.is-warning,
+input.is-warning:out-of-range,
+input.is-warning[aria-invalid="true"] {
+  border-color: var(--color-warning) !important;
+}
+
+input.is-warning:focus-visible {
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warning) 18%, transparent);
+}
+
 .totals-note {
   margin-top: var(--space-3);
   padding-top: var(--space-2);

@@ -129,7 +129,8 @@ function validateFieldVisual(el) {
     setInvalid(el, !(Number.isFinite(v) && v >= 0 && v <= 100));
   } else if (el.name === 'validUntil') {
     const v = el.value;
-    setInvalid(el, !v || !/^\d{4}-\d{2}-\d{2}$/.test(v) || v <= toISODate(new Date()));
+    const warned = !v || !/^\d{4}-\d{2}-\d{2}$/.test(v) || v <= toISODate(new Date());
+    el.classList.toggle('is-warning', warned);
   } else if (el.dataset.item === 'description') setInvalid(el, !String(el.value).trim());
   else if (el.dataset.item === 'quantity') {
     const v = el.value;
@@ -482,7 +483,7 @@ function onInput(e) {
   const { draft } = getState();
   const el = e.target;
 
-  el.parentElement?.querySelector('.field-error')?.remove();
+  el.parentElement?.querySelector('.field-error, .field-warning')?.remove();
   validateFieldVisual(el);
 
   if (el.name === 'client') {
