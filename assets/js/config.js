@@ -6,5 +6,3 @@ export const CONFIG = {
   ],
   DEFAULT_CURRENCY: 'AR$'
 };
-
-export const QUOTE_LIMIT = CONFIG.QUOTE_LIMIT;

@@ -37,6 +37,15 @@ export function saveQuotes(quotes) {
   }
 }
 
+export function eraseQuotes() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function migrateDatabase() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -94,9 +103,29 @@ export function parseJSON(text) {
   } catch {
     throw new Error('El archivo no es un JSON válido.');
   }
-  const quotes = Array.isArray(data) ? data : Array.isArray(data?.quotes) ? data.quotes : null;
-  if (!quotes) throw new Error('El archivo no contiene cotizaciones.');
-  const valid = quotes.filter(isValidQuote);
-  if (!valid.length) throw new Error('No se encontraron cotizaciones válidas en el archivo.');
-  return valid;
+  if (!data || typeof data !== 'object' || Array.isArray(data)
+    || data.app !== 'cotizador-virtual' || data.version !== '0.1') {
+    throw new Error('Este archivo no fue generado por el cotizador. El formato es incompatible.');
+  }
+  const quotes = data.quotes;
+  if (!Array.isArray(quotes) || !quotes.length) {
+    throw new Error('El archivo no contiene cotizaciones.');
+  }
+  if (!quotes.every(isValidQuoteForImport)) {
+    throw new Error('El formato del archivo contiene errores y es incompatible.');
+  }
+  return quotes;
+}
+
+function isValidQuoteForImport(q) {
+  if (!isValidQuote(q)) return false;
+  if (!String(q.number).trim() || !String(q.client).trim() || !String(q.currency).trim()) return false;
+  if (!(typeof q.date === 'string' && !Number.isNaN(Date.parse(q.date)))) return false;
+  const discount = Number(q.discount);
+  if (!Number.isFinite(discount) || discount < 0 || discount > 100) return false;
+  if (!Array.isArray(q.items) || !q.items.length) return false;
+  return q.items.every((item) => item
+    && typeof item.description === 'string' && String(item.description).trim() !== ''
+    && Number.isFinite(Number(item.quantity)) && Number(item.quantity) > 0
+    && Number.isFinite(Number(item.price)) && Number(item.price) >= 0);
 }

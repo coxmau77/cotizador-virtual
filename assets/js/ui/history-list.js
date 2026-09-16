@@ -1,5 +1,6 @@
 import { getState } from '../state.js';
 import { CONFIG } from '../config.js';
+import { EMISOR } from '../emisor.js';
 import { calculateQuote } from '../quote.js';
 import { formatMoney, formatDateTime, escapeHtml } from '../formatters.js';
 
@@ -43,10 +44,12 @@ function backupBarMarkup() {
   const importTitle = slotsFree
     ? ''
     : 'No es posible importar: los slots de almacenamiento no son suficientes.';
+  const contactHref = `mailto:${EMISOR.proveedorEmail}?subject=${encodeURIComponent('Extensión de slots · Cotizador Virtual')}`;
   return `
     <div class="backup-bar">
       <button type="button" class="btn btn-ghost btn-sm" data-action="export-json">Exportar respaldo (JSON)</button>
       <label class="btn btn-ghost btn-sm file-label${slotsFree ? '' : ' is-disabled'}" data-action="import-toggle" title="${escapeHtml(importTitle)}">Importar respaldo (JSON)<input type="file" accept="application/json,.json" data-action="import-json" hidden /></label>
+      ${slotsFree ? '' : `<a class="backup-contact" href="${contactHref}">¿Necesitás más slots? Contactá al desarrollador</a>`}
       <span class="backup-hint" title="El cotizador no se responsabiliza por eliminaciones realizadas por el usuario ni garantiza el historial como respaldo. La app solo se limita a la creación de cotizaciones, no al almacenamiento de documentos.">El respaldo JSON evita perder cotizaciones ante el límite de slots.</span>
     </div>`;
 }

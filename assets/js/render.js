@@ -5,6 +5,7 @@ import { formatMoney } from './formatters.js';
 import {
   isAtLimit,
   saveQuotes,
+  eraseQuotes,
   pushQuote,
   deleteQuote as removeQuoteNumber,
   oldestQuote,
@@ -251,8 +252,9 @@ function handleSaveOverwrite() {
   }
 
   startNewDraft();
-  render();
+  navigate('history');
   showMessage(`Se reemplazó ${oldest.number}. Nueva cotización: ${freshNumber}.`, 'ok');
+  flashNewQuote(freshNumber);
 }
 
 function findByNumber(number) {
@@ -285,7 +287,7 @@ function clearHistory() {
   if (!getState().quotes.length) return;
   if (!window.confirm('Se borrarán todas las cotizaciones guardadas. Esta acción no se puede deshacer.\n\n¿Continuar?')) return;
   setQuotes([]);
-  persist();
+  eraseQuotes();
   render();
   showMessage('Historial borrado.', 'ok');
 }
@@ -346,6 +348,13 @@ function exportJSON() {
   showMessage(`Respaldo exportado (${quotes.length} cotizaciones).`, 'ok');
 }
 
+const IMPORT_BLOCKED_MSG = 'No es posible importar porque los slots de almacenamiento no son suficientes. Contactá al desarrollador.';
+
+function blockImport() {
+  showMessage(IMPORT_BLOCKED_MSG, 'error');
+  window.alert(IMPORT_BLOCKED_MSG);
+}
+
 function handleImportFile(inputEl) {
   const file = inputEl.files && inputEl.files[0];
   const resetInput = () => { inputEl.value = ''; };
@@ -367,7 +376,7 @@ function handleImportFile(inputEl) {
     try {
       const quotes = parseJSON(String(reader.result));
       if (getState().quotes.length + quotes.length > CONFIG.QUOTE_LIMIT) {
-        showMessage('No es posible importar porque los slots de almacenamiento no son suficientes. Contactá al desarrollador.', 'error');
+        blockImport();
         return;
       }
       if (!window.confirm(`Se importarán ${quotes.length} cotizaciones. ¿Continuar?`)) return;
@@ -395,8 +404,12 @@ function onClick(e) {
   if (action === 'import-toggle') {
     if (getState().quotes.length > 0) {
       e.preventDefault();
-      showMessage('No es posible importar porque los slots de almacenamiento no son suficientes. Contactá al desarrollador.', 'error');
+      blockImport();
     }
+    return;
+  }
+
+  if (action === 'import-json') {
     return;
   }
 

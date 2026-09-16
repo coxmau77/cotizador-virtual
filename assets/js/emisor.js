@@ -4,5 +4,6 @@ export const EMISOR = {
   address: 'Calle Ejemplo 123, Ciudad, Provincia',
   phone: '+54 11 0000-0000',
   email: 'contacto@tuempresa.com',
+  proveedorEmail: 'mau@email.com',
   footer: 'Gracias por su confianza. Validez de la cotización: 30 días desde la fecha de emisión.'
 };
