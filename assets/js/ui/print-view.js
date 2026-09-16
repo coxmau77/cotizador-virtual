@@ -1,6 +1,7 @@
 import { EMISOR } from '../emisor.js';
 import { calculateQuote } from '../quote.js';
 import { formatMoney, formatDate, escapeHtml } from '../formatters.js';
+import { logoMarkup } from './logo.js';
 
 export function buildPrintSheet(quote, base = '') {
   const calc = calculateQuote(quote);
@@ -28,7 +29,7 @@ export function buildPrintSheet(quote, base = '') {
   return `
     <header class="print-header">
       <div class="ph-brand">
-        <img class="ph-logo" src="${base}assets/img/user-logo.png" alt="" />
+        ${logoMarkup(base)}
         <div class="ph-text">
           <h1>${escapeHtml(EMISOR.name)}</h1>
           <p>${escapeHtml(EMISOR.cuit)}</p>

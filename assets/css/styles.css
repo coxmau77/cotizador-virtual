@@ -80,12 +80,16 @@ button {
   box-shadow: var(--shadow-sm);
 }
 
-.vh-logo {
-  height: 52px;
+.view-header-emisor .ph-logo {
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.ph-logo {
+  height: 56px;
   width: auto;
   object-fit: contain;
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-2);
+  border-radius: 10vw;
 }
 
 .view-header-emisor .vh-name {
@@ -254,7 +258,13 @@ textarea {
 
 .items-table {
   width: 100%;
-  border-collapse: collapse;
+}
+
+.items-table tr {
+  display: grid;
+  grid-template-columns: minmax(80px, 1.6fr) minmax(60px, 0.35fr) minmax(90px, 0.8fr) minmax(112px, 0.95fr) 36px;
+  column-gap: var(--space-2);
+  align-items: center;
 }
 
 .items-table th {
@@ -263,23 +273,28 @@ textarea {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
-  padding: 0 var(--space-2) var(--space-2);
+  padding: 0 0 var(--space-2);
   border-bottom: 1px solid var(--color-border);
 }
 
 .items-table td {
-  padding: var(--space-2);
+  padding: var(--space-2) 0;
   vertical-align: middle;
 }
 
-.items-table .col-desc { width: 40%; }
-.items-table .col-qty { width: 9%; }
-.items-table .col-price { width: 18%; }
-.items-table .col-st { width: 18%; }
-.items-table .col-rm { width: 36px; }
-
 .items-table input[type="number"] {
-  text-align: right;
+  text-align: center;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .item-desc {
@@ -292,6 +307,48 @@ textarea {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   white-space: nowrap;
+  min-width: 0;
+}
+
+@container (max-width: 540px) {
+  .items-table thead {
+    display: none;
+  }
+
+  .items-table tr {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px;
+    grid-template-areas:
+      "desc desc rm"
+      "qty price ."
+      "st st st";
+    column-gap: var(--space-3);
+    row-gap: var(--space-1);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .items-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-1);
+  }
+
+  .col-desc { grid-area: desc; }
+  .col-qty { grid-area: qty; }
+  .col-price { grid-area: price; }
+  .col-st { grid-area: st; }
+  .col-rm {
+    grid-area: rm;
+    justify-self: end;
+  }
+}
+
+.form-items {
+  container-type: inline-size;
 }
 
 .form-items .btn-ghost {
@@ -676,13 +733,5 @@ input:out-of-range {
   .field-row {
     grid-template-columns: 1fr;
     gap: var(--space-3);
-  }
-
-  .form-items {
-    overflow-x: auto;
-  }
-
-  .items-table {
-    min-width: 520px;
   }
 }

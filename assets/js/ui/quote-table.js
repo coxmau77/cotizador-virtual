@@ -26,13 +26,13 @@ function itemRow(item, index, currency) {
       <td class="col-desc">
         <input class="item-desc" type="text" data-item="description" value="${escapeHtml(item.description)}" placeholder="Descripción…" aria-label="Descripción del item ${index + 1}" autocomplete="off" required />
       </td>
-      <td class="col-qty">
-        <input class="item-qty" type="number" data-item="quantity" min="0" step="any" inputmode="decimal" value="${item.quantity}" placeholder="1" aria-label="Cantidad del item ${index + 1}" required />
+      <td class="col-qty" data-label="Cant.">
+        <input class="item-qty" type="number" data-item="quantity" min="0" step="any" inputmode="decimal" value="${item.quantity}" placeholder="0" aria-label="Cantidad del item ${index + 1}" required />
       </td>
-      <td class="col-price">
+      <td class="col-price" data-label="Precio">
         <input class="item-price" type="number" data-item="price" min="0" step="any" inputmode="decimal" value="${item.price}" placeholder="0" aria-label="Precio del item ${index + 1}" required />
       </td>
-      <td class="col-st">
+      <td class="col-st" data-label="Subtotal">
         <span class="item-subtotal" data-item-subtotal>${subtotal}</span>
       </td>
       <td class="col-rm">
