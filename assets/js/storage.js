@@ -1,4 +1,5 @@
 import { CONFIG } from './config.js';
+import { makeValidUntil } from './quote.js';
 
 const STORAGE_KEY = 'cotizador-v0.1:quotes';
 const SEED_FLAG_KEY = 'cotizador-v0.1:seeded';
@@ -12,11 +13,17 @@ function isValidQuote(q) {
     && Array.isArray(q.items));
 }
 
+function normalizeQuote(q) {
+  if (q.validUntil && /^\d{4}-\d{2}-\d{2}$/.test(String(q.validUntil))) return q;
+  const date = q.date ? new Date(q.date) : new Date();
+  return { ...q, validUntil: makeValidUntil(Number.isNaN(date.getTime()) ? new Date() : date) };
+}
+
 function parseDatabase(raw) {
   if (!raw) return { quotes: [] };
   const data = JSON.parse(raw);
   const quotes = Array.isArray(data) ? data : Array.isArray(data?.quotes) ? data.quotes : [];
-  return { quotes: quotes.filter(isValidQuote) };
+  return { quotes: quotes.filter(isValidQuote).map(normalizeQuote) };
 }
 
 export function loadQuotes() {
@@ -51,7 +58,12 @@ export function migrateDatabase() {
     const raw = localStorage.getItem(STORAGE_KEY);
     const { quotes } = parseDatabase(raw);
     const cleaned = quotes.filter((q) => !SEED_NUMBERS.has(q.number));
-    if (!raw || cleaned.length !== quotes.length || !raw.trim().startsWith('{')) {
+    const rawQuotes = raw ? (() => {
+      const d = JSON.parse(raw);
+      return (Array.isArray(d) ? d : Array.isArray(d?.quotes) ? d.quotes : []).filter(isValidQuote);
+    })() : [];
+    const needsBackfill = rawQuotes.some((q) => !q.validUntil || !/^\d{4}-\d{2}-\d{2}$/.test(String(q.validUntil)));
+    if (needsBackfill || !raw || cleaned.length !== quotes.length || !raw.trim().startsWith('{')) {
       saveQuotes(cleaned);
     }
     localStorage.removeItem(SEED_FLAG_KEY);
@@ -114,13 +126,14 @@ export function parseJSON(text) {
   if (!quotes.every(isValidQuoteForImport)) {
     throw new Error('El formato del archivo contiene errores y es incompatible.');
   }
-  return quotes;
+  return quotes.map(normalizeQuote);
 }
 
 function isValidQuoteForImport(q) {
   if (!isValidQuote(q)) return false;
   if (!String(q.number).trim() || !String(q.client).trim() || !String(q.currency).trim()) return false;
   if (!(typeof q.date === 'string' && !Number.isNaN(Date.parse(q.date)))) return false;
+  if (q.validUntil !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(q.validUntil))) return false;
   const discount = Number(q.discount);
   if (!Number.isFinite(discount) || discount < 0 || discount > 100) return false;
   if (!Array.isArray(q.items) || !q.items.length) return false;

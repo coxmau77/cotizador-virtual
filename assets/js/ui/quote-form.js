@@ -1,6 +1,6 @@
 import { CONFIG } from '../config.js';
 import { getState } from '../state.js';
-import { calculateQuote } from '../quote.js';
+import { calculateQuote, toISODate, makeValidUntil } from '../quote.js';
 import { formatMoney, escapeHtml } from '../formatters.js';
 
 export function formMarkup() {
@@ -8,6 +8,13 @@ export function formMarkup() {
   const currencyOptions = CONFIG.CURRENCIES
     .map((c) => `<option value="${c.code}" ${c.code === draft.currency ? 'selected' : ''}>${c.code} · ${escapeHtml(c.name)}</option>`)
     .join('');
+  const validUntilError = (() => {
+    const v = draft.validUntil;
+    if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(String(v)) || String(v) <= toISODate(new Date())) {
+      return '<p class="field-error">La fecha de validez debe ser posterior a hoy.</p>';
+    }
+    return '';
+  })();
 
   return `
     <form id="quote-form" autocomplete="on">
@@ -28,6 +35,11 @@ export function formMarkup() {
             <input id="discount" name="discount" type="number" min="0" max="100" step="any" inputmode="decimal" value="${draft.discount}" />
           </label>
         </div>
+        <label class="field" for="validUntil">
+          <span>Válida hasta</span>
+          <input id="validUntil" name="validUntil" type="date" min="${makeValidUntil(new Date(), 1)}" value="${draft.validUntil}" required />
+          ${validUntilError}
+        </label>
       </div>
 
       <div class="card form-items">

@@ -153,10 +153,15 @@
 
 .print-notes {
   margin-top: 8mm;
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .print-notes p {
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
   font-size: 13px;
 }
 

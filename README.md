@@ -41,7 +41,7 @@ Producto local-first orientado a uso individual o de pequeña empresa, con foco 
 
 ### 3.1 Emisor (datos de la empresa)
 
-- **Fijo en un objeto JavaScript** (`data/`), no editable por el usuario.
+- **Fijo en un objeto JavaScript** (`assets/js/emisor.js`), no editable por el usuario.
 - Incluye: nombre, RUC o documento, dirección, teléfono, correo y notas/pie de documento.
 - Sin logo editable, sin módulo de configuración.
 
@@ -57,6 +57,7 @@ Producto local-first orientado a uso individual o de pequeña empresa, con foco 
 - Divisas: `AR$` y `U$D`.
 - Estado único: `generado`.
 - Items, descuento global, totales y notas.
+- Fecha de validez (`validUntil`): obligatoria, elegida libremente por el emisor con un input de fecha. Precargada con la fecha actual; el guardado se bloquea mientras no se elija un día posterior a hoy.
 
 ### 3.4 Items
 
@@ -75,8 +76,8 @@ Ver §5. Cálculo canónico.
 ### 3.6 Historial
 
 - Listado de cotizaciones guardadas (hasta el tope configurable).
-- Editar, duplicar, eliminar y reimprimir.
-- Límite configurable en JS (`QUOTE_LIMIT`, default 10).
+- Vista previa (imprimir/exportar PDF) y eliminar.
+- Límite configurable en JS (`QUOTE_LIMIT`, default 8).
 
 ### 3.7 Exportación
 
@@ -129,6 +130,7 @@ total      = base + IVA                           si U$D: total = base, sin lín
 - Descuento entre 0 y 100.
 - Cantidades > 0.
 - Precios ≥ 0.
+- Fecha de validez obligatoria, válida (formato `YYYY-MM-DD`) y posterior a hoy (día futuro).
 
 ---
 
@@ -157,7 +159,7 @@ nombreArchivo = título = `${numero} - ${nombreCliente}`
 
 ### 7.2 Política de desborde (`QUOTE_LIMIT`)
 
-- `QUOTE_LIMIT` se define en `config.js` y es la única fuente de la restricción (hoy 10, mañana 100).
+- `QUOTE_LIMIT` se define en `config.js` y es la única fuente de la restricción (hoy 8, mañana 100).
 - Si se guardan `< LIMIT` cotizaciones → botón "Generar cotización" habilitado (crea una nueva).
 - Si se guardan `== LIMIT` cotizaciones → botón principal deshabilitado y se habilita "Sobrescribir la más antigua", que pide confirmación al usuario antes de reemplazar la cotización más antigua.
 
@@ -188,8 +190,6 @@ cotizador-virtual/
 │           ├── quote-table.js
 │           ├── history-list.js
 │           └── print-view.js  → dialog A4 de impresión
-├── data/
-│   └── sample-data.js         → demo opcional / semilla
 └── README.md
 ```
 
@@ -197,12 +197,13 @@ cotizador-virtual/
 
 ```js
 export const CONFIG = {
-  QUOTE_LIMIT: 10,
+  QUOTE_LIMIT: 8,
   CURRENCIES: [
     { code: 'AR$', name: 'Peso Argentino', tax: 0.21 },
     { code: 'U$D', name: 'Dólar', tax: 0 }
   ],
-  DEFAULT_CURRENCY: 'AR$'
+  DEFAULT_CURRENCY: 'AR$',
+  VALIDITY_DAYS_DEFAULT: 30
 };
 ```
 
@@ -212,8 +213,8 @@ export const CONFIG = {
 
 ### 9.1 Vistas
 
-1. **Nueva cotización**: cliente (texto libre + autocomplete), selector AR$/U$D, tabla de items, descuento global %, resumen de totales en vivo.
-2. **Historial**: listado (hasta `QUOTE_LIMIT`) con acciones editar, duplicar, eliminar, reimprimir.
+1. **Nueva cotización**: cliente (texto libre + autocomplete), selector AR$/U$D, tabla de items, descuento global %, fecha de validez (obligatoria), resumen de totales en vivo.
+2. **Historial**: listado (hasta `QUOTE_LIMIT`) con acciones de vista previa (imprimir/exportar PDF) y eliminar.
 3. **Impresión**: siempre un `dialog` con formato A4 y botón imprimir (`window.print()`), que usa `document.title` como nombre sugerido del PDF.
 
 ### 9.2 Requisitos de UX
@@ -236,7 +237,7 @@ export const CONFIG = {
 - ✔ Casos de cálculo (con/sin descuento, AR$ y U$D) verificados contra valores esperados; 0% no altera el total.
 
 ### Fase 2 — Formulario y recálculo en vivo
-- Cliente, selector de moneda, tabla de items (agregar/quitar/editar), descuento global %.
+- Cliente, selector de moneda, fecha de validez, tabla de items (agregar/quitar), descuento global %.
 - ✔ Al cambiar cantidad/precio/descuento el resumen se actualiza al instante.
 
 ### Fase 3 — Persistencia y desborde
@@ -244,12 +245,12 @@ export const CONFIG = {
 - ✔ Con `QUOTE_LIMIT` alcanzado, el botón principal se deshabilita y sobrescribir pide confirmación.
 
 ### Fase 4 — Historial
-- Lista (hasta `QUOTE_LIMIT`), editar, duplicar, eliminar, reimprimir.
-- ✔ Editar una cotización guardada carga en el formulario y al guardar mantiene su número original (sin duplicar).
+- Lista (hasta `QUOTE_LIMIT`), vista previa (imprimir/exportar PDF) y eliminar.
+- ✔ Eliminar pide confirmación y la vista previa genera el documento A4.
 
 ### Fase 5 — Vista de impresión + `window.print()`
-- `print.css` A4: encabezado emisor fijo, cliente, número, items, totales, notas; `dialog` de impresión.
-- ✔ La impresión/PDF muestra el documento con formato `AR$ 1.500,50` / `U$D 1.500,50`.
+- `print.css` A4: encabezado emisor fijo, cliente, número, fecha de emisión y validez, items, totales, notas; `dialog` de impresión.
+- ✔ La impresión/PDF muestra el documento con formato `AR$ 1.500,50` / `U$D 1.500,50` y la fecha de validez elegida.
 
 ### Fase 6 — Calidad
 - Validaciones visuales, foco por teclado, responsive móvil, casos límite, `document.title` correcto en cada vista.
@@ -268,7 +269,8 @@ La v0.1 estará terminada cuando:
 - se guarde en `localStorage` y se recupere tras recargar,
 - se respete el límite configurable con política de sobrescritura con confirmación,
 - se pueda exportar/importar el respaldo en JSON,
-- el historial permita editar, duplicar, eliminar y reimprimir,
+- el historial permita eliminar y generar la vista previa/impresión de cada cotización,
+- la cotización incluya una fecha de vencimiento/validez obligatoria elegida por el emisor y visible en el documento,
 - la impresión genere un PDF A4 profesional en un `dialog`,
 - todo funcione sin backend,
 - se despliegue correctamente en GitHub Pages o Vercel.

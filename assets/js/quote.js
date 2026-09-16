@@ -4,6 +4,16 @@ export const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 10
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
+export function toISODate(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+export function makeValidUntil(date = new Date(), days = CONFIG.VALIDITY_DAYS_DEFAULT) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return toISODate(d);
+}
+
 export function makeQuoteNumber(date = new Date()) {
   const p = (n) => pad2(n);
   return `COT-${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}`;
@@ -34,11 +44,13 @@ export function createQuote({
   notes = '',
   number = null,
   date = new Date(),
+  validUntil = null,
   existingNumbers = []
 } = {}) {
   return {
     number: number || resolveNumberCollision(makeQuoteNumber(date), existingNumbers),
     date: date.toISOString(),
+    validUntil: validUntil || toISODate(date),
     client: String(client),
     currency,
     discount: Number(discount) || 0,
@@ -91,6 +103,13 @@ export function validateQuote(quote) {
   const discount = Number(quote.discount);
   if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
     errors.discount = 'El descuento debe estar entre 0 y 100.';
+  }
+
+  const validUntil = quote.validUntil;
+  if (!validUntil || !/^\d{4}-\d{2}-\d{2}$/.test(String(validUntil))) {
+    errors.validUntil = 'Elegí una fecha de validez.';
+  } else if (String(validUntil) <= toISODate(new Date())) {
+    errors.validUntil = 'La fecha de validez debe ser posterior a hoy.';
   }
 
   return errors;

@@ -1,6 +1,6 @@
 import { getState, startNewDraft, setQuotes, existingNumbers } from './state.js';
 import { CONFIG } from './config.js';
-import { resolveNumberCollision, makeQuoteNumber, lineTotal, validateQuote, isItemComplete } from './quote.js';
+import { resolveNumberCollision, makeQuoteNumber, lineTotal, validateQuote, isItemComplete, toISODate } from './quote.js';
 import { formatMoney } from './formatters.js';
 import {
   isAtLimit,
@@ -127,6 +127,9 @@ function validateFieldVisual(el) {
   else if (el.name === 'discount') {
     const v = Number(el.value);
     setInvalid(el, !(Number.isFinite(v) && v >= 0 && v <= 100));
+  } else if (el.name === 'validUntil') {
+    const v = el.value;
+    setInvalid(el, !v || !/^\d{4}-\d{2}-\d{2}$/.test(v) || v <= toISODate(new Date()));
   } else if (el.dataset.item === 'description') setInvalid(el, !String(el.value).trim());
   else if (el.dataset.item === 'quantity') {
     const v = el.value;
@@ -138,7 +141,7 @@ function validateFieldVisual(el) {
 }
 
 function fieldForError(key) {
-  if (key === 'client' || key === 'discount') return document.getElementById(key);
+  if (key === 'client' || key === 'discount' || key === 'validUntil') return document.getElementById(key);
   if (key.startsWith('item-')) {
     const [, index, field] = key.split('-');
     return document.querySelector(`#items-area tr[data-index="${index}"] [data-item="${field}"]`);
@@ -491,6 +494,12 @@ function onInput(e) {
   if (el.name === 'discount') {
     draft.discount = el.value;
     renderTotals();
+    updateFormState();
+    return;
+  }
+
+  if (el.name === 'validUntil') {
+    draft.validUntil = el.value;
     updateFormState();
     return;
   }

@@ -1,6 +1,6 @@
 import { EMISOR } from '../emisor.js';
 import { calculateQuote } from '../quote.js';
-import { formatMoney, formatDate, escapeHtml } from '../formatters.js';
+import { formatMoney, formatDate, formatISODate, escapeHtml } from '../formatters.js';
 import { logoMarkup } from './logo.js';
 
 export function buildPrintSheet(quote, base = '') {
@@ -41,6 +41,7 @@ export function buildPrintSheet(quote, base = '') {
         <p class="ph-doc-label">Cotización</p>
         <p class="ph-doc-number">${escapeHtml(quote.number)}</p>
         <p>Fecha: ${escapeHtml(formatDate(quote.date))}</p>
+        <p>Válida hasta: <strong>${escapeHtml(formatISODate(quote.validUntil))}</strong></p>
       </div>
     </header>
 
@@ -66,7 +67,7 @@ export function buildPrintSheet(quote, base = '') {
 
     ${quote.notes ? `<section class="print-notes"><h2>Notas</h2><p>${escapeHtml(quote.notes)}</p></section>` : ''}
 
-    <footer class="print-footer">${escapeHtml(EMISOR.footer)}</footer>`;
+    <footer class="print-footer">Gracias por confiar en <strong>${escapeHtml(EMISOR.name)}</strong>, todos los derechos reservados.</footer>`;
 }
 
 export function documentTitleFor(quote) {
