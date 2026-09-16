@@ -1,5 +1,5 @@
 export const CONFIG = {
-  QUOTE_LIMIT: 10,
+  QUOTE_LIMIT: 8,
   CURRENCIES: [
     { code: 'AR$', name: 'Peso Argentino', tax: 0.21 },
     { code: 'U$D', name: 'Dólar estadounidense', tax: 0 }
