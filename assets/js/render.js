@@ -19,6 +19,7 @@ import { formMarkup, totalsMarkup } from './ui/quote-form.js';
 import { itemsMarkup } from './ui/quote-table.js';
 import { historyMarkup } from './ui/history-list.js';
 import { openPrintPreview } from './ui/print-view.js';
+import { emisorBrandMarkup } from './ui/emisor-brand.js';
 
 const clone = (value) => (typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)));
 
@@ -48,6 +49,8 @@ export function render() {
   renderSidebar();
   if (state.view === 'history') {
     root.innerHTML = historyMarkup();
+    const totalsArea = document.getElementById('totals-area');
+    if (totalsArea) totalsArea.innerHTML = '';
     setDocumentTitle('history');
   } else {
     root.innerHTML = formMarkup();
@@ -62,6 +65,8 @@ export function render() {
 function renderSidebar() {
   const slot = document.getElementById('sidebar-slot');
   slot.innerHTML = sidebarMarkup();
+  const brandSlot = document.getElementById('sidebar-brand');
+  if (brandSlot) brandSlot.innerHTML = emisorBrandMarkup();
 }
 
 function renderItems() {

@@ -65,47 +65,34 @@ button {
   height: calc(100vh - (var(--space-5) * 2));
 }
 
-.brand {
+.view-header-emisor {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.45;
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  text-decoration: none;
-  color: var(--color-text);
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
+.vh-logo {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-  color: #fff;
+  margin-bottom: var(--space-2);
+}
+
+.view-header-emisor .vh-name {
+  color: var(--color-text);
   font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.brand-text strong {
   font-size: 15px;
-}
-
-.brand-text span:last-child,
-.brand-text small {
-  color: var(--color-text-muted);
-  font-size: 12px;
+  letter-spacing: -0.01em;
 }
 
 /* ---------- Sidebar ---------- */
@@ -191,30 +178,6 @@ button {
 
 .app-main {
   min-width: 0;
-}
-
-.view-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
-}
-
-.view-header h1 {
-  font-size: 26px;
-  letter-spacing: -0.01em;
-}
-
-.view-subtitle {
-  margin-top: var(--space-1);
-  color: var(--color-text-muted);
-  font-size: 14px;
-}
-
-.mono {
-  font-family: var(--font-mono);
-  font-size: 0.95em;
 }
 
 /* ---------- Cards ---------- */
@@ -708,10 +671,6 @@ input:out-of-range {
   .sidebar-hint {
     width: 100%;
     margin-top: 0;
-  }
-
-  .view-header h1 {
-    font-size: 22px;
   }
 
   .field-row {

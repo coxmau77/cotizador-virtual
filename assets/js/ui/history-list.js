@@ -1,5 +1,4 @@
 import { getState } from '../state.js';
-import { CONFIG } from '../config.js';
 import { EMISOR } from '../emisor.js';
 import { calculateQuote } from '../quote.js';
 import { formatMoney, formatDateTime, escapeHtml } from '../formatters.js';
@@ -8,12 +7,6 @@ export function historyMarkup() {
   const { quotes } = getState();
   if (!quotes.length) {
     return `
-      <header class="view-header">
-        <div>
-          <h1>Historial</h1>
-          <p class="view-subtitle">0 / ${CONFIG.QUOTE_LIMIT} guardadas</p>
-        </div>
-      </header>
       <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
       <div class="empty-history">
         <p>No hay cotizaciones guardadas todavía.</p>
@@ -25,12 +18,6 @@ export function historyMarkup() {
 
   const newestFirst = [...quotes].sort((a, b) => +new Date(b.date) - +new Date(a.date));
   return `
-    <header class="view-header">
-      <div>
-        <h1>Historial</h1>
-        <p class="view-subtitle">${quotes.length} / ${CONFIG.QUOTE_LIMIT} guardadas</p>
-      </div>
-    </header>
     <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
     <ul class="history-list">
       ${newestFirst.map(card).join('')}

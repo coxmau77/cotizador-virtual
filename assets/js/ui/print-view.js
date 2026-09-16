@@ -31,7 +31,7 @@ export function buildPrintSheet(quote, base = '') {
         <img class="ph-logo" src="${base}assets/img/user-logo.png" alt="" />
         <div class="ph-text">
           <h1>${escapeHtml(EMISOR.name)}</h1>
-          <p>${escapeHtml(EMISOR.document)}</p>
+          <p>${escapeHtml(EMISOR.cuit)}</p>
           <p>${escapeHtml(EMISOR.address)}</p>
           <p>${escapeHtml(EMISOR.phone)}${EMISOR.email ? ` · ${escapeHtml(EMISOR.email)}` : ''}</p>
         </div>

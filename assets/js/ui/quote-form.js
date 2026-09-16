@@ -10,13 +10,6 @@ export function formMarkup() {
     .join('');
 
   return `
-    <header class="view-header">
-      <div>
-        <h1>Nueva cotización</h1>
-        <p class="view-subtitle"><span class="mono">${escapeHtml(draft.number)}</span> · <span id="form-currency-label">${escapeHtml(draft.currency)}</span></p>
-      </div>
-    </header>
-
     <form id="quote-form" autocomplete="on">
       <div class="card form-client">
         <label class="field" for="client">
@@ -42,8 +35,6 @@ export function formMarkup() {
         <div id="items-area"></div>
         <button type="button" class="btn btn-primary btn-sm" data-action="add-item">+ Agregar item</button>
       </div>
-
-      <div id="totals-area"></div>
 
       <div class="card form-notes">
         <label class="field" for="notes" style="margin-bottom:0">
