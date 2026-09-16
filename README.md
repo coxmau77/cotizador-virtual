@@ -14,6 +14,8 @@ Producto local-first orientado a uso individual o de pequeña empresa, con foco 
 - exportación profesional,
 - despliegue simple.
 
+[Cotizador Virtual](https://contizador-virtual.netlify.app/)
+
 ---
 
 ## 2. Decisiones de arquitectura (v0.1)
@@ -32,7 +34,7 @@ Producto local-first orientado a uso individual o de pequeña empresa, con foco 
 - La app es una herramienta de trabajo diario: intuitiva, robusta frente a recarga, sin latencia innecesaria.
 - Separación estricta de responsabilidades:
   - `quote.js`, `formatters.js` y `storage.js` **nunca tocan el DOM**.
-  - `render.js` es la **única** capa de manipulación del DOM.
+  - `render.js` es la **única** capa de manipulación del DOM de la SPA; `print-view.js` solo abre una ventana independiente para la vista de impresión.
   - Este aislamiento permite migrar a un framework en la v0.2 reemplazando solo `render.js` y `ui/*`, sin reescribir modelo ni lógica de cálculo.
 
 ---
@@ -42,7 +44,7 @@ Producto local-first orientado a uso individual o de pequeña empresa, con foco 
 ### 3.1 Emisor (datos de la empresa)
 
 - **Fijo en un objeto JavaScript** (`assets/js/emisor.js`), no editable por el usuario.
-- Incluye: nombre, RUC o documento, dirección, teléfono, correo y notas/pie de documento.
+- Incluye: nombre, CUIT, dirección, teléfono y correo; el pie del documento (marca de agua con el nombre) y el enlace "contactá al desarrollador" del historial se generan a partir de estos datos.
 - Sin logo editable, sin módulo de configuración.
 
 ### 3.2 Cliente
@@ -81,9 +83,8 @@ Ver §5. Cálculo canónico.
 
 ### 3.7 Exportación
 
-- Vista de impresión siempre en un `dialog` con formato A4.
+- Vista de impresión en una ventana emergente (popup) con formato A4 y toolbar Imprimir/Cerrar.
 - `window.print()`.
-- Compartir desde dispositivo con Web Share API (solo móvil, opcional).
 
 ---
 
@@ -160,8 +161,8 @@ nombreArchivo = título = `${numero} - ${nombreCliente}`
 ### 7.2 Política de desborde (`QUOTE_LIMIT`)
 
 - `QUOTE_LIMIT` se define en `config.js` y es la única fuente de la restricción (hoy 8, mañana 100).
-- Si se guardan `< LIMIT` cotizaciones → botón "Generar cotización" habilitado (crea una nueva).
-- Si se guardan `== LIMIT` cotizaciones → botón principal deshabilitado y se habilita "Sobrescribir la más antigua", que pide confirmación al usuario antes de reemplazar la cotización más antigua.
+- Si se guardan `< LIMIT` cotizaciones → botón "Guardar cotización" habilitado (crea una nueva).
+- Si se guardan `== LIMIT` cotizaciones → botón principal deshabilitado y se habilita "Reemplazar cotización más antigua", que pide confirmación al usuario antes de reemplazar la cotización más antigua.
 
 ---
 
@@ -173,7 +174,7 @@ cotizador-virtual/
 ├── assets/
 │   ├── css/
 │   │   ├── variables.css      → tokens (colores, espacios, fuentes)
-│   │   ├── styles.css         → app (shell, formulario, historial, dialog)
+│   │   ├── styles.css         → app (shell, formulario, historial)
 │   │   └── print.css          → vista de impresión A4
 │   └── js/
 │       ├── app.js             → entry point, init, router de vistas
@@ -189,7 +190,12 @@ cotizador-virtual/
 │           ├── quote-form.js
 │           ├── quote-table.js
 │           ├── history-list.js
-│           └── print-view.js  → dialog A4 de impresión
+│           ├── emisor-brand.js
+│           ├── logo.js
+│           └── print-view.js  → preview A4 en ventana emergente
+├── assets/img/
+│   └── user-logo.png          → logo del emisor en documento e historial
+├── LICENSE
 └── README.md
 ```
 
@@ -200,7 +206,7 @@ export const CONFIG = {
   QUOTE_LIMIT: 8,
   CURRENCIES: [
     { code: 'AR$', name: 'Peso Argentino', tax: 0.21 },
-    { code: 'U$D', name: 'Dólar', tax: 0 }
+    { code: 'U$D', name: 'Dólar estadounidense', tax: 0 }
   ],
   DEFAULT_CURRENCY: 'AR$',
   VALIDITY_DAYS_DEFAULT: 30
@@ -215,7 +221,7 @@ export const CONFIG = {
 
 1. **Nueva cotización**: cliente (texto libre + autocomplete), selector AR$/U$D, tabla de items, descuento global %, fecha de validez (obligatoria), resumen de totales en vivo.
 2. **Historial**: listado (hasta `QUOTE_LIMIT`) con un badge de antigüedad relativa ("hoy", "hace 2 días", "hace 1 semana", etc.) junto a la moneda, y acciones de vista previa (imprimir/exportar PDF) y eliminar.
-3. **Impresión**: siempre un `dialog` con formato A4 y botón imprimir (`window.print()`), que usa `document.title` como nombre sugerido del PDF.
+3. **Impresión**: vista previa A4 en una ventana emergente, con toolbar "Imprimir / Exportar PDF" (`window.print()`) y "Cerrar"; usa el `document.title` de esa ventana como nombre sugerido del PDF.
 
 ### 9.2 Requisitos de UX
 
@@ -241,15 +247,15 @@ export const CONFIG = {
 - ✔ Al cambiar cantidad/precio/descuento el resumen se actualiza al instante.
 
 ### Fase 3 — Persistencia y desborde
-- Guardado, carga al iniciar, límite configurable, botones generar/sobrescribir con confirmación, export/import JSON.
-- ✔ Con `QUOTE_LIMIT` alcanzado, el botón principal se deshabilita y sobrescribir pide confirmación.
+- Guardado, carga al iniciar, límite configurable, botones guardar/reemplazar con confirmación, export/import JSON.
+- ✔ Con `QUOTE_LIMIT` alcanzado, el botón principal se deshabilita y reemplazar pide confirmación.
 
 ### Fase 4 — Historial
 - Lista (hasta `QUOTE_LIMIT`), vista previa (imprimir/exportar PDF) y eliminar.
 - ✔ Eliminar pide confirmación y la vista previa genera el documento A4.
 
 ### Fase 5 — Vista de impresión + `window.print()`
-- `print.css` A4: encabezado emisor fijo, cliente, número, fecha de emisión y validez, items, totales, notas; `dialog` de impresión.
+- `print.css` A4: encabezado emisor fijo, cliente, número, fecha de emisión y validez, items, totales, notas; vista previa en ventana emergente con `window.print()`.
 - ✔ La impresión/PDF muestra el documento con formato `AR$ 1.500,50` / `U$D 1.500,50` y la fecha de validez elegida.
 
 ### Fase 6 — Calidad
@@ -271,7 +277,7 @@ La v0.1 estará terminada cuando:
 - se pueda exportar/importar el respaldo en JSON,
 - el historial permita eliminar y generar la vista previa/impresión de cada cotización,
 - la cotización incluya una fecha de vencimiento/validez obligatoria elegida por el emisor y visible en el documento,
-- la impresión genere un PDF A4 profesional en un `dialog`,
+- la impresión genere un PDF A4 profesional desde una ventana emergente,
 - todo funcione sin backend,
 - se despliegue correctamente en GitHub Pages o Vercel.
 
