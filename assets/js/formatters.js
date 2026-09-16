@@ -33,6 +33,26 @@ export function formatDateTime(value) {
   });
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export function formatTimeAgo(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const now = new Date();
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((startOfDay(now) - startOfDay(date)) / DAY_MS);
+  if (days <= 0) return 'hoy';
+  if (days === 1) return 'hace 1 día';
+  if (days < 7) return `hace ${days} días`;
+  if (days < 14) return 'hace 1 semana';
+  if (days < 30) return `hace ${Math.floor(days / 7)} semanas`;
+  if (days < 60) return 'hace 1 mes';
+  if (days < 365) return `hace ${Math.floor(days / 30)} meses`;
+  const years = Math.floor(days / 365);
+  return years === 1 ? 'hace 1 año' : `hace ${years} años`;
+}
+
 export function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')

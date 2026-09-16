@@ -1,8 +1,8 @@
 export const EMISOR = {
   name: 'Tu Empresa SAS',
-  cuit: 'CUIT 00-00000000-0',
+  cuit: 'CUIT 20-12345678-0',
   address: 'Calle Ejemplo 123, Ciudad, Provincia',
-  phone: '+54 11 0000-0000',
+  phone: '+54 11 1234-5678',
   email: 'contacto@tuempresa.com',
   proveedorEmail: 'mau@email.com'
 };

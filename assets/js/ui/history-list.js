@@ -1,7 +1,7 @@
 import { getState } from '../state.js';
 import { EMISOR } from '../emisor.js';
 import { calculateQuote } from '../quote.js';
-import { formatMoney, formatDateTime, escapeHtml } from '../formatters.js';
+import { formatMoney, formatDateTime, formatTimeAgo, escapeHtml } from '../formatters.js';
 
 export function historyMarkup() {
   const { quotes } = getState();
@@ -51,7 +51,10 @@ function card(quote) {
           <h2 class="hc-number mono">${escapeHtml(quote.number)}</h2>
           <p class="hc-date">${escapeHtml(formatDateTime(quote.date))}</p>
         </div>
-        <span class="badge">${escapeHtml(quote.currency)}</span>
+        <div class="hc-badges">
+          <span class="badge badge-time" title="${escapeHtml(formatDateTime(quote.date))}">${escapeHtml(formatTimeAgo(quote.date))}</span>
+          <span class="badge">${escapeHtml(quote.currency)}</span>
+        </div>
       </div>
       <p class="hc-client">${escapeHtml(quote.client)}</p>
       <p class="hc-meta">${itemCount} item${itemCount === 1 ? '' : 's'} · ${formatMoney(calc.total, quote.currency)}</p>

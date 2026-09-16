@@ -680,6 +680,20 @@ input.is-warning:focus-visible {
   white-space: nowrap;
 }
 
+.hc-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.badge-time {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
 .hc-client {
   margin-top: var(--space-2);
   font-size: 16px;

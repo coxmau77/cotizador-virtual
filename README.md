@@ -214,7 +214,7 @@ export const CONFIG = {
 ### 9.1 Vistas
 
 1. **Nueva cotización**: cliente (texto libre + autocomplete), selector AR$/U$D, tabla de items, descuento global %, fecha de validez (obligatoria), resumen de totales en vivo.
-2. **Historial**: listado (hasta `QUOTE_LIMIT`) con acciones de vista previa (imprimir/exportar PDF) y eliminar.
+2. **Historial**: listado (hasta `QUOTE_LIMIT`) con un badge de antigüedad relativa ("hoy", "hace 2 días", "hace 1 semana", etc.) junto a la moneda, y acciones de vista previa (imprimir/exportar PDF) y eliminar.
 3. **Impresión**: siempre un `dialog` con formato A4 y botón imprimir (`window.print()`), que usa `document.title` como nombre sugerido del PDF.
 
 ### 9.2 Requisitos de UX
