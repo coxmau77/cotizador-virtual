@@ -1,12 +1,16 @@
-import { loadQuotes, migrateDatabase } from './storage.js';
-import { setQuotes, startNewDraft } from './state.js';
-import { init as initRender } from './render.js';
+import { startNewDraft } from './state.js';
+import { init as initRender, openLoginDialog, startSessionWatch, unlockApp } from './render.js';
+import { hasValidSession } from './auth.js';
 
 function init() {
-  migrateDatabase();
-  setQuotes(loadQuotes());
   startNewDraft();
   initRender();
+  startSessionWatch();
+  if (hasValidSession()) {
+    unlockApp();
+  } else {
+    openLoginDialog();
+  }
 }
 
 init();

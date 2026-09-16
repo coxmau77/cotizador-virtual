@@ -20,6 +20,14 @@ export function sidebarMarkup() {
         </svg>
         Borrar historial
       </button>` : ''}
+      <button type="button" class="btn btn-nav-clear" data-action="logout">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <path d="M16 17l5-5-5-5" />
+          <path d="M21 12H9" />
+        </svg>
+        Cerrar sesión
+      </button>
       <p class="sidebar-limit" role="status">${quotes.length} / ${limit} slots${full ? ' · lleno' : ''}</p>
       <p class="sidebar-hint">Los datos se guardan en este dispositivo (localStorage).</p>
     </nav>`;

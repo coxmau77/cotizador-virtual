@@ -4,6 +4,7 @@ import { resolveNumberCollision, makeQuoteNumber, lineTotal, validateQuote, isIt
 import { formatMoney } from './formatters.js';
 import {
   isAtLimit,
+  migrateDatabase,
   saveQuotes,
   eraseQuotes,
   pushQuote,
@@ -20,11 +21,24 @@ import { itemsMarkup } from './ui/quote-table.js';
 import { historyMarkup } from './ui/history-list.js';
 import { openPrintPreview } from './ui/print-view.js';
 import { emisorBrandMarkup } from './ui/emisor-brand.js';
+import { loginDialogMarkup } from './ui/login-dialog.js';
+import { EMISOR } from './emisor.js';
+import {
+  authenticate,
+  saveSession,
+  clearSession,
+  hasValidSession,
+  registerFailedAttempt,
+  resetAuthAttempts,
+  isAccountLocked,
+  sessionExpiry
+} from './auth.js';
 
 const clone = (value) => (typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)));
 
 let root = null;
 let messageTimer = null;
+let privateDataLoaded = false;
 
 const VIEW_TITLES = {
   new: 'Nueva cotización · Cotizador Virtual',
@@ -43,9 +57,6 @@ export function init() {
 
 export function render() {
   const state = getState();
-  if (state.view === 'history') {
-    setQuotes(loadQuotes());
-  }
   renderSidebar();
   if (state.view === 'history') {
     root.innerHTML = historyMarkup();
@@ -60,6 +71,21 @@ export function render() {
     updateAddButton();
     setDocumentTitle('new');
   }
+}
+
+export function unlockApp() {
+  if (!privateDataLoaded) {
+    migrateDatabase();
+    setQuotes(loadQuotes());
+    privateDataLoaded = true;
+  }
+  render();
+}
+
+function lockApp() {
+  privateDataLoaded = false;
+  setQuotes([]);
+  render();
 }
 
 function renderSidebar() {
@@ -196,7 +222,14 @@ function persist() {
   return saveQuotes(getState().quotes);
 }
 
+function requireValidSession() {
+  if (hasValidSession()) return true;
+  checkSessionGate();
+  return false;
+}
+
 function handleSaveQuote() {
+  if (!requireValidSession()) return;
   const state = getState();
   const errors = validateQuote(state.draft);
   if (Object.keys(errors).length) {
@@ -230,6 +263,7 @@ function handleSaveQuote() {
 }
 
 function handleSaveOverwrite() {
+  if (!requireValidSession()) return;
   const state = getState();
   const errors = validateQuote(state.draft);
   if (Object.keys(errors).length) {
@@ -283,6 +317,7 @@ function flashNewQuote(number) {
 }
 
 function deleteQuote(number) {
+  if (!requireValidSession()) return;
   const quote = findByNumber(number);
   if (!quote) return;
   if (!window.confirm(`¿Eliminar ${quote.number} (${quote.client})?\nEsta acción no se puede deshacer.`)) return;
@@ -293,6 +328,7 @@ function deleteQuote(number) {
 }
 
 function clearHistory() {
+  if (!requireValidSession()) return;
   if (!getState().quotes.length) return;
   if (!window.confirm('Se borrarán todas las cotizaciones guardadas. Esta acción no se puede deshacer.\n\n¿Continuar?')) return;
   setQuotes([]);
@@ -349,6 +385,7 @@ function downloadBlob(text, filename) {
 }
 
 function exportJSON() {
+  if (!requireValidSession()) return;
   const quotes = getState().quotes;
   downloadBlob(
     exportJSONString(quotes),
@@ -365,6 +402,10 @@ function blockImport() {
 }
 
 function handleImportFile(inputEl) {
+  if (!requireValidSession()) {
+    inputEl.value = '';
+    return;
+  }
   const file = inputEl.files && inputEl.files[0];
   const resetInput = () => { inputEl.value = ''; };
   if (!file) return;
@@ -383,6 +424,7 @@ function handleImportFile(inputEl) {
   };
   reader.onload = () => {
     try {
+      if (!requireValidSession()) return;
       const quotes = parseJSON(String(reader.result));
       if (getState().quotes.length + quotes.length > CONFIG.QUOTE_LIMIT) {
         blockImport();
@@ -401,6 +443,126 @@ function handleImportFile(inputEl) {
     }
   };
   reader.readAsText(file);
+}
+
+/* ---------- Puerta de acceso ---------- */
+
+export function openLoginDialog() {
+  if (document.getElementById('auth-overlay')) return;
+  document.body.classList.add('is-auth-locked');
+  document.body.insertAdjacentHTML('beforeend', loginDialogMarkup());
+  if (isAccountLocked()) {
+    setAuthLockedMessage();
+  }
+  const dialog = document.getElementById('auth-dialog');
+  if (dialog) dialog.focus();
+  const email = document.getElementById('auth-email');
+  if (email) {
+    email.focus();
+    email.select();
+  }
+}
+
+function setAuthLockedMessage() {
+  const btn = document.getElementById('btn-auth-login');
+  const email = document.getElementById('auth-email');
+  const code = document.getElementById('auth-code');
+  if (btn) btn.disabled = true;
+  if (email) email.disabled = true;
+  if (code) code.disabled = true;
+  authMessage(`Acceso bloqueado. Comunicate con el área de desarrollo: ${EMISOR.proveedorEmail}.`, 'error');
+}
+
+function closeLoginDialog() {
+  const overlay = document.getElementById('auth-overlay');
+  if (!overlay) return;
+  overlay.classList.add('is-closing');
+  setTimeout(() => {
+    if (!document.body.contains(overlay)) return;
+    document.body.classList.remove('is-auth-locked');
+    overlay.remove();
+    const nav = document.querySelector('[data-action="view-new"], [data-action="view-history"]');
+    if (nav) nav.focus();
+  }, 220);
+}
+
+function authMessage(text, kind = 'info') {
+  const el = document.getElementById('auth-message');
+  if (!el) return;
+  el.textContent = text;
+  el.className = `form-message ${kind}`;
+}
+
+async function handleAuthLogin() {
+  const email = document.getElementById('auth-email');
+  const code = document.getElementById('auth-code');
+  const btn = document.getElementById('btn-auth-login');
+  if (!email || !code || !btn || btn.disabled || isAccountLocked()) return;
+
+  btn.disabled = true;
+  authMessage('Verificando…', 'info');
+  try {
+    const ok = await authenticate(email.value, code.value);
+    if (!ok) {
+      const attempt = registerFailedAttempt();
+      setInvalid(email, !String(email.value).trim());
+      setInvalid(code, true);
+      if (attempt.locked) {
+        setAuthLockedMessage();
+        authMessage(`Acceso bloqueado. Comunicate con el área de desarrollo: ${EMISOR.proveedorEmail}.`, 'error');
+      } else {
+        authMessage(`Correo o código incorrecto. Verificá los datos. Intentos restantes: ${attempt.remaining}.`, 'error');
+      }
+      code.focus();
+      code.select();
+      return;
+    }
+    const session = saveSession(email.value);
+    resetAuthAttempts();
+    unlockApp();
+    scheduleSessionCheck();
+    closeLoginDialog();
+    if (!session.persistent) {
+      showMessage('Sesión temporal: el navegador no permite guardar el acceso. Se solicitará nuevamente al recargar.', 'warn');
+    }
+  } catch (err) {
+    authMessage(err.message || 'No se pudo iniciar sesión.', 'error');
+  } finally {
+    if (!isAccountLocked()) btn.disabled = false;
+  }
+}
+
+function handleLogout() {
+  clearSession();
+  lockApp();
+  openLoginDialog();
+}
+
+let sessionTimer = null;
+
+export function startSessionWatch() {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkSessionGate();
+  });
+  scheduleSessionCheck();
+}
+
+function checkSessionGate() {
+  if (document.body.classList.contains('is-auth-locked')) return;
+  if (!hasValidSession()) {
+    lockApp();
+    openLoginDialog();
+    return;
+  }
+  scheduleSessionCheck();
+}
+
+function scheduleSessionCheck() {
+  clearTimeout(sessionTimer);
+  if (document.body.classList.contains('is-auth-locked')) return;
+  const expiry = sessionExpiry();
+  if (!expiry) return;
+  sessionTimer = setTimeout(checkSessionGate, Math.max(0, expiry - Date.now()));
 }
 
 /* ---------- Eventos ---------- */
@@ -457,6 +619,12 @@ function onClick(e) {
     case 'export-json':
       exportJSON();
       break;
+    case 'auth-login':
+      handleAuthLogin();
+      break;
+    case 'logout':
+      handleLogout();
+      break;
     default:
       break;
   }
@@ -484,6 +652,10 @@ function onInput(e) {
   const el = e.target;
 
   el.parentElement?.querySelector('.field-error, .field-warning')?.remove();
+  if (el.closest?.('#auth-dialog')) {
+    setInvalid(el, false);
+    return;
+  }
   validateFieldVisual(el);
 
   if (el.name === 'client') {
@@ -525,11 +697,18 @@ function onInput(e) {
 
 function onFormSubmit(e) {
   e.preventDefault();
+  if (e.target.id === 'auth-form') handleAuthLogin();
 }
 
 function onKeydown(e) {
   const el = e.target;
   const isTextInput = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
+
+  if (el?.closest?.('#auth-dialog') && e.key === 'Enter') {
+    e.preventDefault();
+    handleAuthLogin();
+    return;
+  }
 
   if (el?.dataset?.item) {
     if (e.key === 'Enter') {

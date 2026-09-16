@@ -98,10 +98,21 @@
   border-bottom: 1px solid #131722;
 }
 
-.print-items th:nth-child(1) { width: 8mm; }
-.print-items th:nth-child(3) { width: 16mm; }
-.print-items th:nth-child(4) { width: 34mm; }
-.print-items th:nth-child(5) { width: 36mm; }
+.print-items th:nth-child(1) {
+  width: 8mm;
+}
+
+.print-items th:nth-child(3) {
+  width: 16mm;
+}
+
+.print-items th:nth-child(4) {
+  width: 34mm;
+}
+
+.print-items th:nth-child(5) {
+  width: 36mm;
+}
 
 .print-items td {
   padding: 7px 8px;

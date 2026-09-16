@@ -164,6 +164,17 @@ nombreArchivo = título = `${numero} - ${nombreCliente}`
 - Si se guardan `< LIMIT` cotizaciones → botón "Guardar cotización" habilitado (crea una nueva).
 - Si se guardan `== LIMIT` cotizaciones → botón principal deshabilitado y se habilita "Reemplazar cotización más antigua", que pide confirmación al usuario antes de reemplazar la cotización más antigua.
 
+### 7.3 Puerta de acceso (`auth.js`)
+
+- La app es de uso individual: al entrar valida el correo del emisor (`EMISOR.email`) y un **código de activación** (`EMISOR.activationCode`, configurado en texto plano en `emisor.js`).
+- El `EMISOR.activationCode` es la **fuente única** de la clave: `auth.js` deriva de él el hash de validación y el fingerprint de la sesión. Cambiar la clave en ese único lugar basta para todo.
+- Si se cambia `EMISOR.activationCode`, las **sesiones ya abiertas se invalidan** (el fingerprint cifrado del registro ya no coincide) y la app vuelve a pedir el acceso.
+- Tras validar, se guarda una sesión **cifrada** (XOR con clave fija + Base64) en `localStorage` bajo `cotizador-v0.1:session`, con vigencia de `SESSION_TTL_DAYS` (7 días) e incluyendo el fingerprint cifrado de la clave.
+- Si no hay sesión, está vencida, su fingerprint no coincide o el registro está corrupto → el sistema ejecuta `openLoginDialog()`, un overlay con formulario (email precargado + código).
+- La sesión se revalida al entrar, al volver a la pestaña (`visibilitychange`) y periódicamente; si expira en uso, se vuelve a abrir el diálogo. El sidebar incluye "Cerrar sesión".
+- ⚠️ Al ser una app 100% frontend esto es **ofuscación, no seguridad real**: el código de activación vive en texto plano en el repo y cualquiera con DevTools puede leer el cifrado. Es una puerta con llave, no una caja fuerte.
+- **Probar el vencimiento sin esperar 7 días**: poner `SESSION_TTL_MINUTES: 2` en `config.js`, cerrar sesión y volver a entrar. El diálogo reabre solo en ≤1 min tras el vencimiento (el vigilante revisa cada 60 s y al volver a la pestaña). Al terminar, volver a `null`.
+
 ---
 
 ## 8. Estructura del proyecto
@@ -177,22 +188,24 @@ cotizador-virtual/
 │   │   ├── styles.css         → app (shell, formulario, historial)
 │   │   └── print.css          → vista de impresión A4
 │   └── js/
-│       ├── app.js             → entry point, init, router de vistas
-│       ├── config.js          → QUOTE_LIMIT, monedas, IVA
-│       ├── emisor.js          → objeto emisor fijo
-│       ├── state.js           → estado global en memoria
-│       ├── storage.js         → localStorage, límite, export/import JSON, numeración
-│       ├── quote.js           → lógica pura: numeración, cálculo, validación (sin DOM)
-│       ├── formatters.js      → formato monetario AR$/U$D, fechas
-│       ├── render.js          → única capa de manipulación del DOM (aislada para v0.2)
-│       └── ui/
-│           ├── sidebar.js
-│           ├── quote-form.js
-│           ├── quote-table.js
-│           ├── history-list.js
-│           ├── emisor-brand.js
-│           ├── logo.js
-│           └── print-view.js  → preview A4 en ventana emergente
+│   ├── app.js             → entry point, init, puerta de acceso
+│   ├── config.js          → QUOTE_LIMIT, monedas, IVA, TTL de sesión
+│   ├── auth.js            → acceso: hash SHA-256 del código, sesión cifrada (sin DOM)
+│   ├── emisor.js          → objeto emisor fijo
+│   ├── state.js           → estado global en memoria
+│   ├── storage.js         → localStorage, límite, export/import JSON, numeración
+│   ├── quote.js           → lógica pura: numeración, cálculo, validación (sin DOM)
+│   ├── formatters.js      → formato monetario AR$/U$D, fechas
+│   ├── render.js          → única capa de manipulación del DOM (aislada para v0.2)
+│   └── ui/
+│       ├── sidebar.js
+│       ├── quote-form.js
+│       ├── quote-table.js
+│       ├── history-list.js
+│       ├── emisor-brand.js
+│       ├── logo.js
+│       ├── login-dialog.js  → diálogo de acceso (overlay + formulario)
+│       └── print-view.js  → preview A4 en ventana emergente
 ├── assets/img/
 │   └── user-logo.png          → logo del emisor en documento e historial
 ├── LICENSE
@@ -209,7 +222,9 @@ export const CONFIG = {
     { code: 'U$D', name: 'Dólar estadounidense', tax: 0 }
   ],
   DEFAULT_CURRENCY: 'AR$',
-  VALIDITY_DAYS_DEFAULT: 30
+  VALIDITY_DAYS_DEFAULT: 30,
+  SESSION_TTL_DAYS: 7,
+  SESSION_TTL_MINUTES: null  // si se define, sobreescribe los días (útil para probar el vencimiento)
 };
 ```
 
